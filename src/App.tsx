@@ -663,6 +663,17 @@ export default function App() {
                     </span>
                   ))}
                 </div>
+                <button
+                  className="conflict-rules-link"
+                  type="button"
+                  onClick={() => {
+                    setShowConflictPanel(false);
+                    setShowRules(true);
+                  }}
+                >
+                  <CircleHelp size={16} />
+                  View rules
+                </button>
               </div>
             </>
           )}

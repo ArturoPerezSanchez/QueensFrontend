@@ -637,6 +637,30 @@ h1 {
   font-weight: 900;
 }
 
+.conflict-rules-link {
+  display: inline-flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: #5f1120;
+  background: rgba(255, 255, 255, 0.58);
+  font-weight: 900;
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    background 120ms ease;
+}
+
+.conflict-rules-link:hover,
+.conflict-rules-link:focus-visible {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+}
+
 .win-panel > svg {
   color: #d55e00;
 }
