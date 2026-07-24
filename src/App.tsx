@@ -11,7 +11,6 @@ import {
 import {
   AlertTriangle,
   CircleHelp,
-  Crown,
   Eye,
   EyeOff,
   Loader2,
@@ -336,7 +335,7 @@ export default function App() {
         <div className="top-bar">
           <div className="brand-lockup">
             <span className="brand-mark" aria-hidden="true">
-              <img src="/queens-logo.svg" alt="" />
+              <img src="/logo.png" alt="" />
             </span>
             <div>
               <h1>Queens</h1>
@@ -464,9 +463,9 @@ export default function App() {
                       onPointerMove={clearLongPressTimer}
                       onPointerUp={clearLongPressTimer}
                     >
-                      {hasQueen && <Crown className="queen-icon" size={26} strokeWidth={2.6} />}
+                      {hasQueen && <img className="queen-piece" src="/queen.png" alt="" />}
                       {hasMark && <XIcon className="mark-icon" size={30} strokeWidth={1.45} />}
-                      {isSolution && !hasQueen && <Crown className="solution-icon" size={22} strokeWidth={2.5} />}
+                      {isSolution && !hasQueen && <img className="solution-piece" src="/queen.png" alt="" />}
                     </button>
                   );
                 }),
