@@ -10,6 +10,7 @@ import {
 } from "react";
 import {
   AlertTriangle,
+  ChevronDown,
   CircleHelp,
   Eye,
   EyeOff,
@@ -444,31 +445,34 @@ export default function App() {
             </div>
           </div>
 
-          <div className="size-control" aria-label="Board size">
-            <select
-              id="board-size"
-              aria-label="Board size"
-              value={size}
-              onChange={(event) => setSize(Number(event.target.value))}
-              disabled={loadState === "loading"}
-            >
-              {BOARD_SIZES.map((boardSize) => (
-                <option key={boardSize} value={boardSize}>
-                  {boardSize} x {boardSize}
-                </option>
-              ))}
-            </select>
-          </div>
+          <div className="top-actions">
+            <div className="size-control" aria-label="Board size">
+              <select
+                id="board-size"
+                aria-label="Board size"
+                value={size}
+                onChange={(event) => setSize(Number(event.target.value))}
+                disabled={loadState === "loading"}
+              >
+                {BOARD_SIZES.map((boardSize) => (
+                  <option key={boardSize} value={boardSize}>
+                    {boardSize} x {boardSize}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={16} aria-hidden="true" />
+            </div>
 
-          <button
-            className="icon-action"
-            type="button"
-            aria-label={showRules ? "Hide rules" : "Show rules"}
-            aria-pressed={showRules}
-            onClick={() => setShowRules((current) => !current)}
-          >
-            <CircleHelp size={20} />
-          </button>
+            <button
+              className="icon-action"
+              type="button"
+              aria-label={showRules ? "Hide rules" : "Show rules"}
+              aria-pressed={showRules}
+              onClick={() => setShowRules((current) => !current)}
+            >
+              <CircleHelp size={20} />
+            </button>
+          </div>
         </div>
 
         <div className="stats-grid" aria-live="polite">
