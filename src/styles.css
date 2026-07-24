@@ -546,6 +546,14 @@ h1 {
   transform: translateY(-1px);
 }
 
+.conflict-dismiss-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: transparent;
+  cursor: default;
+}
+
 .conflict-panel {
   position: relative;
   display: grid;
@@ -561,6 +569,29 @@ h1 {
     rgba(255, 255, 255, 0.86);
   box-shadow: 0 22px 54px rgba(23, 33, 43, 0.26);
   backdrop-filter: blur(10px);
+}
+
+.conflict-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  color: #5f1120;
+  background: rgba(255, 255, 255, 0.52);
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    background 120ms ease;
+}
+
+.conflict-close:hover,
+.conflict-close:focus-visible {
+  background: rgba(255, 255, 255, 0.86);
+  transform: translateY(-1px);
 }
 
 .board-conflict-panel {

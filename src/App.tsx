@@ -635,20 +635,36 @@ export default function App() {
           )}
 
           {showConflictPanel && hasConflicts && gameStatus && (
-            <div className="conflict-panel board-conflict-panel" role="dialog" aria-label="Board conflicts">
-              <AlertTriangle size={30} />
-              <div>
-                <strong>Conflicts</strong>
-                <p>Resolve the highlighted rule{activeViolations.length === 1 ? "" : "s"}.</p>
+            <>
+              <button
+                className="conflict-dismiss-layer"
+                type="button"
+                aria-label="Close board conflicts"
+                onClick={() => setShowConflictPanel(false)}
+              />
+              <div className="conflict-panel board-conflict-panel" role="dialog" aria-label="Board conflicts">
+                <button
+                  className="conflict-close"
+                  type="button"
+                  aria-label="Close board conflicts"
+                  onClick={() => setShowConflictPanel(false)}
+                >
+                  <XIcon size={17} />
+                </button>
+                <AlertTriangle size={30} />
+                <div>
+                  <strong>Conflicts</strong>
+                  <p>Resolve the highlighted rule{activeViolations.length === 1 ? "" : "s"}.</p>
+                </div>
+                <div className="conflict-list">
+                  {activeViolations.map((kind) => (
+                    <span key={kind}>
+                      {violationLabel(kind)} {gameStatus.violations[kind]}
+                    </span>
+                  ))}
+                </div>
               </div>
-              <div className="conflict-list">
-                {activeViolations.map((kind) => (
-                  <span key={kind}>
-                    {violationLabel(kind)} {gameStatus.violations[kind]}
-                  </span>
-                ))}
-              </div>
-            </div>
+            </>
           )}
         </div>
 
