@@ -642,9 +642,14 @@ export default function App() {
         )}
 
         <div className="action-row">
-          <button className="primary-action" type="button" onClick={requestNewPuzzle} disabled={loadState === "loading"}>
-            <RefreshCcw size={18} />
-            New
+          <button
+            className="secondary-action"
+            type="button"
+            aria-pressed={showPatterns}
+            onClick={() => setShowPatterns((current) => !current)}
+          >
+            <Palette size={18} />
+            {showPatterns ? "Plain" : "Patterns"}
           </button>
           <button className="secondary-action" type="button" onClick={retryPuzzle} disabled={!puzzle}>
             <RotateCcw size={18} />
@@ -662,20 +667,15 @@ export default function App() {
           <button
             className="secondary-action"
             type="button"
-            aria-pressed={showPatterns}
-            onClick={() => setShowPatterns((current) => !current)}
-          >
-            <Palette size={18} />
-            {showPatterns ? "Plain" : "Patterns"}
-          </button>
-          <button
-            className="secondary-action"
-            type="button"
             aria-pressed={autoMarkForbidden}
             onClick={() => setAutoMarkForbidden((current) => !current)}
           >
             <ShieldX size={18} />
             Auto X
+          </button>
+          <button className="primary-action" type="button" onClick={requestNewPuzzle} disabled={loadState === "loading"}>
+            <RefreshCcw size={18} />
+            New Game
           </button>
         </div>
       </section>
