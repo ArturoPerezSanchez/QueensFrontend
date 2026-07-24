@@ -129,6 +129,10 @@ export default function App() {
   const [showRules, setShowRules] = useState(false);
   const longPressTimer = useRef<number | null>(null);
   const suppressClickKey = useRef<string | null>(null);
+  const isMarkDragging = useRef(false);
+  const markDragMode = useRef<"add" | "remove" | null>(null);
+  const draggedMarkKeys = useRef<Set<string>>(new Set());
+  const suppressNextContextMenu = useRef(false);
 
   const gameStatus = useMemo(
     () => (puzzle ? evaluateGame(puzzle.board, queens) : null),
@@ -223,6 +227,22 @@ export default function App() {
     localStorage.setItem("queens-auto-mark", String(autoMarkForbidden));
   }, [autoMarkForbidden]);
 
+  const finishMarkDrag = useCallback(() => {
+    isMarkDragging.current = false;
+    markDragMode.current = null;
+    draggedMarkKeys.current.clear();
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("pointerup", finishMarkDrag);
+    window.addEventListener("blur", finishMarkDrag);
+
+    return () => {
+      window.removeEventListener("pointerup", finishMarkDrag);
+      window.removeEventListener("blur", finishMarkDrag);
+    };
+  }, [finishMarkDrag]);
+
   function toggleQueen(row: number, col: number): void {
     if (!puzzle || gameStatus?.isSolved) {
       return;
@@ -271,6 +291,38 @@ export default function App() {
     });
   }
 
+  function setCellMark(row: number, col: number, shouldMark: boolean): void {
+    if (!puzzle || gameStatus?.isSolved) {
+      return;
+    }
+
+    const key = positionKey(row, col);
+    setQueens((currentQueens) => {
+      if (!currentQueens.has(key)) {
+        return currentQueens;
+      }
+
+      const nextQueens = new Set(currentQueens);
+      nextQueens.delete(key);
+      return nextQueens;
+    });
+    setManualMarks((currentMarks) => {
+      if (shouldMark === currentMarks.has(key)) {
+        return currentMarks;
+      }
+
+      const nextMarks = new Set(currentMarks);
+
+      if (shouldMark) {
+        nextMarks.add(key);
+      } else {
+        nextMarks.delete(key);
+      }
+
+      return nextMarks;
+    });
+  }
+
   function clearLongPressTimer(): void {
     if (longPressTimer.current !== null) {
       window.clearTimeout(longPressTimer.current);
@@ -292,6 +344,51 @@ export default function App() {
     }, 520);
   }
 
+  function paintDraggedMark(row: number, col: number): void {
+    if (!markDragMode.current) {
+      return;
+    }
+
+    const key = positionKey(row, col);
+
+    if (draggedMarkKeys.current.has(key)) {
+      return;
+    }
+
+    draggedMarkKeys.current.add(key);
+    setCellMark(row, col, markDragMode.current === "add");
+  }
+
+  function handleCellPointerDown(event: PointerEvent<HTMLButtonElement>, row: number, col: number): void {
+    if (event.pointerType === "mouse" && event.button === 2) {
+      event.preventDefault();
+      clearLongPressTimer();
+      isMarkDragging.current = true;
+      suppressNextContextMenu.current = true;
+      draggedMarkKeys.current = new Set();
+      markDragMode.current = manualMarks.has(positionKey(row, col)) ? "remove" : "add";
+      paintDraggedMark(row, col);
+      return;
+    }
+
+    startLongPressMark(event, row, col);
+  }
+
+  function continueMarkDrag(event: PointerEvent<HTMLButtonElement>, row: number, col: number): void {
+    if (!isMarkDragging.current || event.pointerType !== "mouse") {
+      return;
+    }
+
+    event.preventDefault();
+    paintDraggedMark(row, col);
+  }
+
+  function handleCellPointerLeave(): void {
+    if (!isMarkDragging.current) {
+      clearLongPressTimer();
+    }
+  }
+
   function handleCellClick(row: number, col: number): void {
     const key = positionKey(row, col);
 
@@ -305,6 +402,12 @@ export default function App() {
 
   function handleCellContextMenu(event: MouseEvent<HTMLButtonElement>, row: number, col: number): void {
     event.preventDefault();
+
+    if (suppressNextContextMenu.current) {
+      suppressNextContextMenu.current = false;
+      return;
+    }
+
     const key = positionKey(row, col);
 
     if (suppressClickKey.current === key) {
@@ -457,10 +560,14 @@ export default function App() {
                       aria-pressed={hasQueen}
                       onClick={() => handleCellClick(rowIndex, colIndex)}
                       onContextMenu={(event) => handleCellContextMenu(event, rowIndex, colIndex)}
-                      onPointerCancel={clearLongPressTimer}
-                      onPointerDown={(event) => startLongPressMark(event, rowIndex, colIndex)}
-                      onPointerLeave={clearLongPressTimer}
-                      onPointerMove={clearLongPressTimer}
+                      onPointerCancel={() => {
+                        clearLongPressTimer();
+                        finishMarkDrag();
+                      }}
+                      onPointerDown={(event) => handleCellPointerDown(event, rowIndex, colIndex)}
+                      onPointerEnter={(event) => continueMarkDrag(event, rowIndex, colIndex)}
+                      onPointerLeave={handleCellPointerLeave}
+                      onPointerMove={(event) => continueMarkDrag(event, rowIndex, colIndex)}
                       onPointerUp={clearLongPressTimer}
                     >
                       {hasQueen && <img className="queen-piece" src="/queen.png" alt="" />}
