@@ -21,7 +21,6 @@ import {
   RefreshCcw,
   RotateCcw,
   ShieldX,
-  Sparkles,
   Trophy,
   X as XIcon,
 } from "lucide-react";
@@ -612,24 +611,21 @@ export default function App() {
           <span style={{ width: `${progress}%` }} />
         </div>
 
-        <div className="status-strip" aria-live="polite">
-          {gameStatus?.isSolved ? (
-            <span className="success-message">
-              <PartyPopper size={18} />
-              Brilliant solve in {formatTime(elapsedSeconds)}
-            </span>
-          ) : hasConflicts ? (
-            <span className="warning-message">
-              <AlertTriangle size={18} />
-              Conflicts on the board
-            </span>
-          ) : (
-            <span>
-              <Sparkles size={18} />
-              {gameStatus?.queenCount ?? 0} placed
-            </span>
-          )}
-        </div>
+        {(gameStatus?.isSolved || hasConflicts) && (
+          <div className="status-strip" aria-live="polite">
+            {gameStatus?.isSolved ? (
+              <span className="success-message">
+                <PartyPopper size={18} />
+                Brilliant solve in {formatTime(elapsedSeconds)}
+              </span>
+            ) : (
+              <span className="warning-message">
+                <AlertTriangle size={18} />
+                Conflicts on the board
+              </span>
+            )}
+          </div>
+        )}
 
         {hasConflicts && gameStatus && (
           <div className="violation-row" aria-label="Conflict summary">
