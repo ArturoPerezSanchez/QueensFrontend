@@ -81,18 +81,8 @@ function addConflictHint(
     return;
   }
 
-  for (const [row, col] of [
-    [firstRow, firstCol],
-    [secondRow, secondCol],
-  ]) {
-    for (let nextRow = row - 1; nextRow <= row + 1; nextRow += 1) {
-      for (let nextCol = col - 1; nextCol <= col + 1; nextCol += 1) {
-        if (nextRow >= 0 && nextRow < size && nextCol >= 0 && nextCol < size) {
-          conflictHints.adjacent.add(positionKey(nextRow, nextCol));
-        }
-      }
-    }
-  }
+  conflictHints.adjacent.add(positionKey(firstRow, firstCol));
+  conflictHints.adjacent.add(positionKey(secondRow, secondCol));
 }
 
 export function evaluateGame(board: number[][], queens: Set<string>): GameStatus {
