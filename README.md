@@ -13,9 +13,11 @@ The app is designed to feel good on both desktop and phone screens: the board sc
 - Conflict highlighting for rows, columns, regions, and adjacent queens
 - Optional solution reveal
 - X marks for excluding cells while solving
+- Optional Auto X mode that marks forbidden cells after placing a queen
 - Colorblind-friendly region palette
 - Optional texture patterns for players who want extra region separation
 - Celebratory win feedback with a solved-state panel
+- Rules panel hidden by default behind a help button
 - Responsive layout for mobile, tablet, and desktop
 - Same-origin API proxy setup for local development and Vercel deployment
 
@@ -36,6 +38,7 @@ These Queens pieces do not attack across full chess diagonals. Only neighboring 
 - Left click or tap a cell to place or remove a queen.
 - Right click a cell to mark it with an X.
 - Long press a cell on touch devices to mark it with an X.
+- Turn on **Auto X** to automatically mark cells blocked by a placed queen's row, column, region, and neighboring cells.
 - Use **Retry** to clear the current board without loading a new puzzle.
 - Use **New** to request a fresh puzzle for the selected size.
 - Use **Solution** to reveal the generated solution.

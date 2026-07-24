@@ -94,3 +94,34 @@ export function evaluateGame(board: number[][], queens: Set<string>): GameStatus
 export function toPositionSet(positions: readonly Position[] | null): Set<string> {
   return new Set((positions ?? []).map(([row, col]) => positionKey(row, col)));
 }
+
+export function getForbiddenMarks(board: number[][], queens: Set<string>): Set<string> {
+  const marks = new Set<string>();
+  const queenPositions = [...queens].map(parsePositionKey);
+
+  for (const [queenRow, queenCol] of queenPositions) {
+    const queenRegion = board[queenRow][queenCol];
+
+    for (let index = 0; index < board.length; index += 1) {
+      marks.add(positionKey(queenRow, index));
+      marks.add(positionKey(index, queenCol));
+    }
+
+    for (let row = 0; row < board.length; row += 1) {
+      for (let col = 0; col < board[row].length; col += 1) {
+        const isSameRegion = board[row][col] === queenRegion;
+        const isAdjacent = Math.abs(row - queenRow) <= 1 && Math.abs(col - queenCol) <= 1;
+
+        if (isSameRegion || isAdjacent) {
+          marks.add(positionKey(row, col));
+        }
+      }
+    }
+  }
+
+  for (const queen of queens) {
+    marks.delete(queen);
+  }
+
+  return marks;
+}

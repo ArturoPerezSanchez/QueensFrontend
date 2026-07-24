@@ -10,6 +10,7 @@ import {
 } from "react";
 import {
   AlertTriangle,
+  CircleHelp,
   Crown,
   Eye,
   EyeOff,
@@ -17,14 +18,16 @@ import {
   Medal,
   PartyPopper,
   Palette,
+  PenLine,
   RefreshCcw,
   RotateCcw,
+  ShieldX,
   Sparkles,
   Trophy,
   X as XIcon,
 } from "lucide-react";
 import { fetchPuzzle } from "./api";
-import { BOARD_SIZES, evaluateGame, formatTime, positionKey, toPositionSet } from "./game";
+import { BOARD_SIZES, evaluateGame, formatTime, getForbiddenMarks, positionKey, toPositionSet } from "./game";
 import type { Puzzle, ViolationKind } from "./types";
 
 const REGION_STYLES = [
@@ -86,6 +89,10 @@ function getStoredPatternPreference(): boolean {
   return localStorage.getItem("queens-show-patterns") === "true";
 }
 
+function getStoredAutoMarkPreference(): boolean {
+  return localStorage.getItem("queens-auto-mark") === "true";
+}
+
 function countCompletedGroups(board: number[][], queens: Set<string>): number {
   const usedRegions = new Set<number>();
 
@@ -112,13 +119,15 @@ export default function App() {
   const [size, setSize] = useState(8);
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [queens, setQueens] = useState<Set<string>>(() => new Set());
-  const [marks, setMarks] = useState<Set<string>>(() => new Set());
+  const [manualMarks, setManualMarks] = useState<Set<string>>(() => new Set());
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [bestTimes, setBestTimes] = useState<BestTimes>(() => getStoredBestTimes());
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [error, setError] = useState<string | null>(null);
   const [showSolution, setShowSolution] = useState(false);
   const [showPatterns, setShowPatterns] = useState(() => getStoredPatternPreference());
+  const [autoMarkForbidden, setAutoMarkForbidden] = useState(() => getStoredAutoMarkPreference());
+  const [showRules, setShowRules] = useState(false);
   const longPressTimer = useRef<number | null>(null);
   const suppressClickKey = useRef<string | null>(null);
 
@@ -127,6 +136,19 @@ export default function App() {
     [puzzle, queens],
   );
   const solutionCells = useMemo(() => toPositionSet(puzzle?.solution ?? null), [puzzle?.solution]);
+  const forbiddenMarks = useMemo(
+    () => (puzzle && autoMarkForbidden ? getForbiddenMarks(puzzle.board, queens) : new Set<string>()),
+    [autoMarkForbidden, puzzle, queens],
+  );
+  const marks = useMemo(() => {
+    const next = new Set([...manualMarks, ...forbiddenMarks]);
+
+    for (const queen of queens) {
+      next.delete(queen);
+    }
+
+    return next;
+  }, [forbiddenMarks, manualMarks, queens]);
   const completedRegions = useMemo(
     () => (puzzle ? countCompletedGroups(puzzle.board, queens) : 0),
     [puzzle, queens],
@@ -142,7 +164,7 @@ export default function App() {
       const nextPuzzle = await fetchPuzzle(nextSize, signal);
       setPuzzle(nextPuzzle);
       setQueens(new Set());
-      setMarks(new Set());
+      setManualMarks(new Set());
       setElapsedSeconds(0);
       setLoadState("ready");
     } catch (loadError) {
@@ -198,6 +220,10 @@ export default function App() {
     localStorage.setItem("queens-show-patterns", String(showPatterns));
   }, [showPatterns]);
 
+  useEffect(() => {
+    localStorage.setItem("queens-auto-mark", String(autoMarkForbidden));
+  }, [autoMarkForbidden]);
+
   function toggleQueen(row: number, col: number): void {
     if (!puzzle || gameStatus?.isSolved) {
       return;
@@ -211,7 +237,7 @@ export default function App() {
         next.delete(key);
       } else {
         next.add(key);
-        setMarks((currentMarks) => {
+        setManualMarks((currentMarks) => {
           const nextMarks = new Set(currentMarks);
           nextMarks.delete(key);
           return nextMarks;
@@ -233,7 +259,7 @@ export default function App() {
       nextQueens.delete(key);
       return nextQueens;
     });
-    setMarks((currentMarks) => {
+    setManualMarks((currentMarks) => {
       const nextMarks = new Set(currentMarks);
 
       if (nextMarks.has(key)) {
@@ -292,7 +318,7 @@ export default function App() {
 
   function retryPuzzle(): void {
     setQueens(new Set());
-    setMarks(new Set());
+    setManualMarks(new Set());
     setElapsedSeconds(0);
     setShowSolution(false);
   }
@@ -305,12 +331,12 @@ export default function App() {
   const hasConflicts = Boolean(gameStatus && gameStatus.conflicts.size > 0);
 
   return (
-    <main className="app-shell">
+    <main className={`app-shell ${showRules ? "rules-open" : ""}`}>
       <section className="game-surface" aria-label="Queens game">
         <div className="top-bar">
           <div className="brand-lockup">
             <span className="brand-mark" aria-hidden="true">
-              <img src="/queens-logo-192.png" alt="" />
+              <img src="/queens-logo.svg" alt="" />
             </span>
             <div>
               <p className="eyebrow">QueensAPI</p>
@@ -333,6 +359,16 @@ export default function App() {
               ))}
             </select>
           </div>
+
+          <button
+            className="icon-action"
+            type="button"
+            aria-label={showRules ? "Hide rules" : "Show rules"}
+            aria-pressed={showRules}
+            onClick={() => setShowRules((current) => !current)}
+          >
+            <CircleHelp size={20} />
+          </button>
         </div>
 
         <div className="stats-grid" aria-live="polite">
@@ -424,7 +460,7 @@ export default function App() {
                       onPointerUp={clearLongPressTimer}
                     >
                       {hasQueen && <Crown className="queen-icon" size={26} strokeWidth={2.6} />}
-                      {hasMark && <XIcon className="mark-icon" size={24} strokeWidth={3} />}
+                      {hasMark && <XIcon className="mark-icon" size={34} strokeWidth={3.4} />}
                       {isSolution && !hasQueen && <Crown className="solution-icon" size={22} strokeWidth={2.5} />}
                     </button>
                   );
@@ -453,6 +489,10 @@ export default function App() {
                   New best
                 </span>
               )}
+              <button className="win-action" type="button" onClick={requestNewPuzzle}>
+                <RefreshCcw size={17} />
+                Play again
+              </button>
             </div>
           )}
         </div>
@@ -517,9 +557,19 @@ export default function App() {
             <Palette size={18} />
             {showPatterns ? "Plain" : "Patterns"}
           </button>
+          <button
+            className="secondary-action"
+            type="button"
+            aria-pressed={autoMarkForbidden}
+            onClick={() => setAutoMarkForbidden((current) => !current)}
+          >
+            <ShieldX size={18} />
+            Auto X
+          </button>
         </div>
       </section>
 
+      {showRules && (
       <aside className="side-panel" aria-label="Game summary">
         <div className="summary-block">
           <Trophy size={22} />
@@ -527,6 +577,14 @@ export default function App() {
             <span>Current size</span>
             <strong>{size} x {size}</strong>
           </div>
+          <button
+            className="icon-action close-rules"
+            type="button"
+            aria-label="Hide rules"
+            onClick={() => setShowRules(false)}
+          >
+            <XIcon size={18} />
+          </button>
         </div>
 
         <div className="rules-list">
@@ -535,8 +593,13 @@ export default function App() {
           <span>One per region</span>
           <span>No touching</span>
           <span>Right-click marks X</span>
+          <span>
+            <PenLine size={16} />
+            Auto X marks forbidden cells
+          </span>
         </div>
       </aside>
+      )}
     </main>
   );
 }

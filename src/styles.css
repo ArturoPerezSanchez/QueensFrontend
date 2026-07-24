@@ -38,7 +38,7 @@ button {
 
 .app-shell {
   display: grid;
-  grid-template-columns: minmax(0, 760px) minmax(220px, 300px);
+  grid-template-columns: minmax(0, 760px);
   align-items: start;
   justify-content: center;
   gap: clamp(18px, 4vw, 34px);
@@ -51,6 +51,10 @@ button {
     #f4f2eb;
 }
 
+.app-shell.rules-open {
+  grid-template-columns: minmax(0, 760px) minmax(220px, 300px);
+}
+
 .game-surface,
 .side-panel {
   border: 1px solid var(--line);
@@ -61,7 +65,7 @@ button {
 
 .game-surface {
   display: grid;
-  gap: 18px;
+  gap: 16px;
   width: 100%;
   padding: clamp(14px, 3vw, 24px);
   border-radius: 8px;
@@ -77,21 +81,22 @@ button {
 
 .top-bar {
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
+  padding-bottom: 4px;
 }
 
 .brand-lockup {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
 }
 
 .brand-mark {
   display: grid;
   place-items: center;
-  width: 54px;
-  height: 54px;
+  width: 44px;
+  height: 44px;
   flex: 0 0 auto;
   border-radius: 8px;
   overflow: hidden;
@@ -120,8 +125,8 @@ button {
 h1 {
   margin: 0;
   color: var(--ink);
-  font-size: clamp(2.2rem, 8vw, 4.8rem);
-  line-height: 0.92;
+  font-size: clamp(1.9rem, 5vw, 2.8rem);
+  line-height: 0.95;
   letter-spacing: 0;
 }
 
@@ -129,6 +134,7 @@ h1 {
   display: grid;
   gap: 7px;
   justify-items: end;
+  margin-left: auto;
 }
 
 .size-control label {
@@ -140,12 +146,41 @@ h1 {
 
 .size-control select {
   min-height: 42px;
-  padding: 0 38px 0 14px;
+  min-width: 116px;
+  padding: 0 34px 0 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--ink);
   background: #fff;
   box-shadow: 0 10px 22px rgba(31, 41, 51, 0.08);
+}
+
+.icon-action {
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.78);
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.icon-action:hover,
+.icon-action:focus-visible,
+.icon-action[aria-pressed="true"] {
+  color: #fffdf7;
+  background: #17212b;
+}
+
+.icon-action:hover {
+  transform: translateY(-1px);
 }
 
 .stats-grid {
@@ -259,18 +294,11 @@ h1 {
 
 .mark-icon {
   color: #111827;
+  width: 68%;
+  height: 68%;
   filter:
     drop-shadow(0 1px 0 rgba(255, 255, 255, 0.46))
     drop-shadow(0 4px 8px rgba(17, 24, 39, 0.18));
-}
-
-.cell.has-mark::before {
-  position: absolute;
-  inset: 23%;
-  content: "";
-  border: 2px solid rgba(17, 24, 39, 0.62);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.22);
 }
 
 .cell.is-conflict {
@@ -431,6 +459,7 @@ h1 {
   gap: 16px;
   padding: 18px;
   border-radius: 8px;
+  animation: rules-enter 180ms ease both;
 }
 
 .win-panel {
@@ -456,7 +485,7 @@ h1 {
   z-index: 5;
   top: 50%;
   left: 50%;
-  width: min(86%, 360px);
+  width: min(86%, 390px);
   transform: translate(-50%, -50%);
   border-color: rgba(23, 33, 43, 0.16);
   background:
@@ -496,6 +525,21 @@ h1 {
   font-size: 0.82rem;
   font-weight: 900;
   white-space: nowrap;
+}
+
+.win-action {
+  display: inline-flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 8px;
+  color: #fffdf7;
+  background: #17212b;
+  font-weight: 900;
+  cursor: pointer;
 }
 
 .confetti-field {
@@ -544,6 +588,10 @@ h1 {
   gap: 12px;
 }
 
+.close-rules {
+  margin-left: auto;
+}
+
 .summary-block svg {
   color: #d79a1e;
 }
@@ -560,6 +608,9 @@ h1 {
 }
 
 .rules-list span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -595,6 +646,18 @@ h1 {
   to {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes rules-enter {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
@@ -640,7 +703,8 @@ h1 {
 }
 
 @media (max-width: 900px) {
-  .app-shell {
+  .app-shell,
+  .app-shell.rules-open {
     grid-template-columns: minmax(0, 1fr);
     padding: 14px;
   }
@@ -657,8 +721,8 @@ h1 {
   }
 
   .brand-mark {
-    width: 48px;
-    height: 48px;
+    width: 42px;
+    height: 42px;
   }
 
   .stats-grid {
@@ -675,7 +739,7 @@ h1 {
 
   .action-row {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .primary-action,
