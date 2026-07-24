@@ -44,6 +44,57 @@ function markDuplicateQueens(
   }
 }
 
+function addConflictHint(
+  board: number[][],
+  conflictHints: Record<ViolationKind, Set<string>>,
+  kind: ViolationKind,
+  first: Position,
+  second: Position,
+): void {
+  const size = board.length;
+  const [firstRow, firstCol] = first;
+  const [secondRow, secondCol] = second;
+
+  if (kind === "row") {
+    for (let col = 0; col < size; col += 1) {
+      conflictHints.row.add(positionKey(firstRow, col));
+    }
+    return;
+  }
+
+  if (kind === "column") {
+    for (let row = 0; row < size; row += 1) {
+      conflictHints.column.add(positionKey(row, firstCol));
+    }
+    return;
+  }
+
+  if (kind === "region") {
+    const region = board[firstRow][firstCol];
+    for (let row = 0; row < size; row += 1) {
+      for (let col = 0; col < size; col += 1) {
+        if (board[row][col] === region) {
+          conflictHints.region.add(positionKey(row, col));
+        }
+      }
+    }
+    return;
+  }
+
+  for (const [row, col] of [
+    [firstRow, firstCol],
+    [secondRow, secondCol],
+  ]) {
+    for (let nextRow = row - 1; nextRow <= row + 1; nextRow += 1) {
+      for (let nextCol = col - 1; nextCol <= col + 1; nextCol += 1) {
+        if (nextRow >= 0 && nextRow < size && nextCol >= 0 && nextCol < size) {
+          conflictHints.adjacent.add(positionKey(nextRow, nextCol));
+        }
+      }
+    }
+  }
+}
+
 export function evaluateGame(board: number[][], queens: Set<string>): GameStatus {
   const size = board.length;
   const rows = new Map<number, string[]>();
@@ -68,35 +119,8 @@ export function evaluateGame(board: number[][], queens: Set<string>): GameStatus
   }
 
   markDuplicateQueens(rows.values(), conflicts, violations, "row");
-  for (const [row, positions] of rows.entries()) {
-    if (positions.length > 1) {
-      for (let col = 0; col < size; col += 1) {
-        conflictHints.row.add(positionKey(row, col));
-      }
-    }
-  }
-
   markDuplicateQueens(columns.values(), conflicts, violations, "column");
-  for (const [col, positions] of columns.entries()) {
-    if (positions.length > 1) {
-      for (let row = 0; row < size; row += 1) {
-        conflictHints.column.add(positionKey(row, col));
-      }
-    }
-  }
-
   markDuplicateQueens(regions.values(), conflicts, violations, "region");
-  for (const [region, positions] of regions.entries()) {
-    if (positions.length > 1) {
-      for (let row = 0; row < size; row += 1) {
-        for (let col = 0; col < size; col += 1) {
-          if (board[row][col] === region) {
-            conflictHints.region.add(positionKey(row, col));
-          }
-        }
-      }
-    }
-  }
 
   const queenPositions = [...queens].map(parsePositionKey);
   for (let first = 0; first < queenPositions.length; first += 1) {
@@ -104,24 +128,26 @@ export function evaluateGame(board: number[][], queens: Set<string>): GameStatus
       const [firstRow, firstCol] = queenPositions[first];
       const [secondRow, secondCol] = queenPositions[second];
       const areTouching = Math.abs(firstRow - secondRow) <= 1 && Math.abs(firstCol - secondCol) <= 1;
+      const reasons: ViolationKind[] = [];
 
+      if (firstRow === secondRow) {
+        reasons.push("row");
+      }
+      if (firstCol === secondCol) {
+        reasons.push("column");
+      }
+      if (board[firstRow][firstCol] === board[secondRow][secondCol]) {
+        reasons.push("region");
+      }
       if (areTouching) {
+        reasons.push("adjacent");
         incrementViolation(violations, "adjacent");
+      }
+
+      if (reasons.length > 0) {
         conflicts.add(positionKey(firstRow, firstCol));
         conflicts.add(positionKey(secondRow, secondCol));
-
-        for (const [row, col] of [
-          [firstRow, firstCol],
-          [secondRow, secondCol],
-        ]) {
-          for (let nextRow = row - 1; nextRow <= row + 1; nextRow += 1) {
-            for (let nextCol = col - 1; nextCol <= col + 1; nextCol += 1) {
-              if (nextRow >= 0 && nextRow < size && nextCol >= 0 && nextCol < size) {
-                conflictHints.adjacent.add(positionKey(nextRow, nextCol));
-              }
-            }
-          }
-        }
+        addConflictHint(board, conflictHints, reasons[0], queenPositions[first], queenPositions[second]);
       }
     }
   }

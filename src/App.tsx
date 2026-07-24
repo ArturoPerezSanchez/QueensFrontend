@@ -424,12 +424,11 @@ export default function App() {
                   const hasQueen = queens.has(key);
                   const hasMark = marks.has(key);
                   const isConflict = gameStatus?.conflicts.has(key);
-                  const conflictHintClasses = gameStatus
-                    ? (Object.keys(gameStatus.conflictHints) as ViolationKind[])
-                        .filter((kind) => gameStatus.conflictHints[kind].has(key))
-                        .map((kind) => `hint-${kind}`)
-                    : [];
-                  const isConflictHint = conflictHintClasses.length > 0;
+                  const isConflictHint = gameStatus
+                    ? (Object.keys(gameStatus.conflictHints) as ViolationKind[]).some((kind) =>
+                        gameStatus.conflictHints[kind].has(key),
+                      )
+                    : false;
                   const isSolution = showSolution && solutionCells.has(key);
                   const regionStyle = REGION_STYLES[Math.abs(region) % REGION_STYLES.length];
 
@@ -440,7 +439,6 @@ export default function App() {
                         hasQueen ? "has-queen" : "",
                         hasMark ? "has-mark" : "",
                         isConflictHint ? "is-conflict-hint" : "",
-                        ...conflictHintClasses,
                         isConflict ? "is-conflict" : "",
                         isSolution ? "is-solution" : "",
                       ]

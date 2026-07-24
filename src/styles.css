@@ -269,36 +269,13 @@ h1 {
 
 .cell.is-conflict-hint::before {
   position: absolute;
-  inset: 0;
+  inset: 8%;
   z-index: 0;
   content: "";
-  background: rgba(184, 50, 70, 0.16);
-  pointer-events: none;
-}
-
-.cell.hint-row::before {
-  background:
-    linear-gradient(0deg, transparent 0 18%, rgba(184, 50, 70, 0.18) 18% 82%, transparent 82%),
-    rgba(184, 50, 70, 0.08);
-}
-
-.cell.hint-column::before {
-  background:
-    linear-gradient(90deg, transparent 0 18%, rgba(184, 50, 70, 0.18) 18% 82%, transparent 82%),
-    rgba(184, 50, 70, 0.08);
-}
-
-.cell.hint-region::before {
-  background:
-    repeating-linear-gradient(135deg, rgba(184, 50, 70, 0.16) 0 4px, transparent 4px 11px),
-    rgba(184, 50, 70, 0.08);
-}
-
-.cell.hint-adjacent::before {
-  inset: 10%;
   border: 2px solid rgba(184, 50, 70, 0.34);
-  border-radius: 6px;
-  background: rgba(184, 50, 70, 0.08);
+  border-radius: 7px;
+  background: rgba(184, 50, 70, 0.1);
+  pointer-events: none;
 }
 
 .cell.has-queen::after,
