@@ -273,7 +273,7 @@ h1 {
   padding: 0;
   color: #263238;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0) 54%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 90%),
     var(--region-color);
   border-right: 1px solid rgba(23, 33, 43, 0.34);
   border-bottom: 1px solid rgba(23, 33, 43, 0.34);
@@ -290,7 +290,7 @@ h1 {
 .board.patterns-enabled .cell {
   background:
     var(--region-pattern),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0) 54%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 90%),
     var(--region-color);
 }
 
