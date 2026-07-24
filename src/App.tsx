@@ -127,6 +127,7 @@ export default function App() {
   const [showPatterns, setShowPatterns] = useState(() => getStoredPatternPreference());
   const [autoMarkForbidden, setAutoMarkForbidden] = useState(() => getStoredAutoMarkPreference());
   const [showRules, setShowRules] = useState(false);
+  const [showConflictPanel, setShowConflictPanel] = useState(false);
   const longPressTimer = useRef<number | null>(null);
   const suppressClickKey = useRef<string | null>(null);
   const isMarkDragging = useRef(false);
@@ -138,6 +139,10 @@ export default function App() {
     () => (puzzle ? evaluateGame(puzzle.board, queens) : null),
     [puzzle, queens],
   );
+  const hasConflicts = Boolean(gameStatus && gameStatus.conflicts.size > 0);
+  const activeViolations = gameStatus
+    ? (Object.keys(gameStatus.violations) as ViolationKind[]).filter((kind) => gameStatus.violations[kind] > 0)
+    : [];
   const solutionCells = useMemo(() => toPositionSet(puzzle?.solution ?? null), [puzzle?.solution]);
   const forbiddenMarks = useMemo(
     () => (puzzle && autoMarkForbidden ? getForbiddenMarks(puzzle.board, queens) : new Set<string>()),
@@ -162,6 +167,7 @@ export default function App() {
     setLoadState("loading");
     setError(null);
     setShowSolution(false);
+    setShowConflictPanel(false);
 
     try {
       const nextPuzzle = await fetchPuzzle(nextSize, signal);
@@ -226,6 +232,12 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("queens-auto-mark", String(autoMarkForbidden));
   }, [autoMarkForbidden]);
+
+  useEffect(() => {
+    if (!hasConflicts) {
+      setShowConflictPanel(false);
+    }
+  }, [hasConflicts]);
 
   const finishMarkDrag = useCallback(() => {
     isMarkDragging.current = false;
@@ -423,6 +435,7 @@ export default function App() {
     setManualMarks(new Set());
     setElapsedSeconds(0);
     setShowSolution(false);
+    setShowConflictPanel(false);
   }
 
   function requestNewPuzzle(): void {
@@ -430,7 +443,6 @@ export default function App() {
   }
 
   const progress = puzzle && gameStatus ? Math.min(100, Math.round((gameStatus.queenCount / puzzle.size) * 100)) : 0;
-  const hasConflicts = Boolean(gameStatus && gameStatus.conflicts.size > 0);
 
   return (
     <main className={`app-shell ${showRules ? "rules-open" : ""}`}>
@@ -609,35 +621,47 @@ export default function App() {
               </button>
             </div>
           )}
+
+          {hasConflicts && gameStatus && !gameStatus.isSolved && (
+            <button
+              className="conflict-trigger"
+              type="button"
+              aria-label={showConflictPanel ? "Hide board conflicts" : "Show board conflicts"}
+              aria-expanded={showConflictPanel}
+              onClick={() => setShowConflictPanel((current) => !current)}
+            >
+              <AlertTriangle size={22} />
+            </button>
+          )}
+
+          {showConflictPanel && hasConflicts && gameStatus && (
+            <div className="conflict-panel board-conflict-panel" role="dialog" aria-label="Board conflicts">
+              <AlertTriangle size={30} />
+              <div>
+                <strong>Conflicts</strong>
+                <p>Resolve the highlighted rule{activeViolations.length === 1 ? "" : "s"}.</p>
+              </div>
+              <div className="conflict-list">
+                {activeViolations.map((kind) => (
+                  <span key={kind}>
+                    {violationLabel(kind)} {gameStatus.violations[kind]}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="progress-track" aria-hidden="true">
           <span style={{ width: `${progress}%` }} />
         </div>
 
-        {(gameStatus?.isSolved || hasConflicts) && (
+        {gameStatus?.isSolved && (
           <div className="status-strip" aria-live="polite">
-            {gameStatus?.isSolved ? (
-              <span className="success-message">
-                <PartyPopper size={18} />
-                Brilliant solve in {formatTime(elapsedSeconds)}
-              </span>
-            ) : (
-              <span className="warning-message">
-                <AlertTriangle size={18} />
-                Conflicts on the board
-              </span>
-            )}
-          </div>
-        )}
-
-        {hasConflicts && gameStatus && (
-          <div className="violation-row" aria-label="Conflict summary">
-            {(Object.keys(gameStatus.violations) as ViolationKind[]).map((kind) => (
-              <span className={gameStatus.violations[kind] > 0 ? "active" : ""} key={kind}>
-                {violationLabel(kind)} {gameStatus.violations[kind]}
-              </span>
-            ))}
+            <span className="success-message">
+              <PartyPopper size={18} />
+              Brilliant solve in {formatTime(elapsedSeconds)}
+            </span>
           </div>
         )}
 
