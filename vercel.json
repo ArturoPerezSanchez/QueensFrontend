@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/queens",
+      "destination": "https://api.arturops.com/queens"
+    }
+  ]
+}

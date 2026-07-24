@@ -1,0 +1,96 @@
+import type { GameStatus, Position, ViolationKind } from "./types";
+
+export const BOARD_SIZES = [4, 5, 6, 7, 8, 9, 10] as const;
+
+export function positionKey(row: number, col: number): string {
+  return `${row}:${col}`;
+}
+
+export function formatTime(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+export function parsePositionKey(key: string): Position {
+  const [row, col] = key.split(":").map(Number);
+  return [row, col];
+}
+
+function incrementViolation(violations: Record<ViolationKind, number>, kind: ViolationKind): void {
+  violations[kind] += 1;
+}
+
+function markDuplicateConflicts(
+  entries: Map<number, string[]>,
+  conflicts: Set<string>,
+  violations: Record<ViolationKind, number>,
+  kind: ViolationKind,
+): void {
+  for (const positions of entries.values()) {
+    if (positions.length > 1) {
+      incrementViolation(violations, kind);
+      positions.forEach((position) => conflicts.add(position));
+    }
+  }
+}
+
+export function evaluateGame(board: number[][], queens: Set<string>): GameStatus {
+  const size = board.length;
+  const rows = new Map<number, string[]>();
+  const columns = new Map<number, string[]>();
+  const regions = new Map<number, string[]>();
+  const conflicts = new Set<string>();
+  const violations: Record<ViolationKind, number> = {
+    row: 0,
+    column: 0,
+    region: 0,
+    adjacent: 0,
+  };
+
+  for (const key of queens) {
+    const [row, col] = parsePositionKey(key);
+    const region = board[row]?.[col];
+
+    rows.set(row, [...(rows.get(row) ?? []), key]);
+    columns.set(col, [...(columns.get(col) ?? []), key]);
+    regions.set(region, [...(regions.get(region) ?? []), key]);
+  }
+
+  markDuplicateConflicts(rows, conflicts, violations, "row");
+  markDuplicateConflicts(columns, conflicts, violations, "column");
+  markDuplicateConflicts(regions, conflicts, violations, "region");
+
+  const queenPositions = [...queens].map(parsePositionKey);
+  for (let first = 0; first < queenPositions.length; first += 1) {
+    for (let second = first + 1; second < queenPositions.length; second += 1) {
+      const [firstRow, firstCol] = queenPositions[first];
+      const [secondRow, secondCol] = queenPositions[second];
+      const areTouching = Math.abs(firstRow - secondRow) <= 1 && Math.abs(firstCol - secondCol) <= 1;
+
+      if (areTouching) {
+        incrementViolation(violations, "adjacent");
+        conflicts.add(positionKey(firstRow, firstCol));
+        conflicts.add(positionKey(secondRow, secondCol));
+      }
+    }
+  }
+
+  const hasOnePerRow = rows.size === size && [...rows.values()].every((positions) => positions.length === 1);
+  const hasOnePerColumn =
+    columns.size === size && [...columns.values()].every((positions) => positions.length === 1);
+  const hasOnePerRegion =
+    regions.size === size && [...regions.values()].every((positions) => positions.length === 1);
+  const hasNoConflicts = conflicts.size === 0;
+
+  return {
+    conflicts,
+    isSolved: queens.size === size && hasOnePerRow && hasOnePerColumn && hasOnePerRegion && hasNoConflicts,
+    queenCount: queens.size,
+    violations,
+  };
+}
+
+export function toPositionSet(positions: readonly Position[] | null): Set<string> {
+  return new Set((positions ?? []).map(([row, col]) => positionKey(row, col)));
+}
