@@ -17,5 +17,6 @@ export type GameStatus = {
   isSolved: boolean;
   queenCount: number;
   conflicts: Set<string>;
+  conflictHints: Record<ViolationKind, Set<string>>;
   violations: Record<ViolationKind, number>;
 };

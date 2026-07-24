@@ -21,13 +21,22 @@ function incrementViolation(violations: Record<ViolationKind, number>, kind: Vio
   violations[kind] += 1;
 }
 
-function markDuplicateConflicts(
-  entries: Map<number, string[]>,
+function createConflictHints(): Record<ViolationKind, Set<string>> {
+  return {
+    row: new Set(),
+    column: new Set(),
+    region: new Set(),
+    adjacent: new Set(),
+  };
+}
+
+function markDuplicateQueens(
+  groups: Iterable<string[]>,
   conflicts: Set<string>,
   violations: Record<ViolationKind, number>,
   kind: ViolationKind,
 ): void {
-  for (const positions of entries.values()) {
+  for (const positions of groups) {
     if (positions.length > 1) {
       incrementViolation(violations, kind);
       positions.forEach((position) => conflicts.add(position));
@@ -41,6 +50,7 @@ export function evaluateGame(board: number[][], queens: Set<string>): GameStatus
   const columns = new Map<number, string[]>();
   const regions = new Map<number, string[]>();
   const conflicts = new Set<string>();
+  const conflictHints = createConflictHints();
   const violations: Record<ViolationKind, number> = {
     row: 0,
     column: 0,
@@ -57,9 +67,36 @@ export function evaluateGame(board: number[][], queens: Set<string>): GameStatus
     regions.set(region, [...(regions.get(region) ?? []), key]);
   }
 
-  markDuplicateConflicts(rows, conflicts, violations, "row");
-  markDuplicateConflicts(columns, conflicts, violations, "column");
-  markDuplicateConflicts(regions, conflicts, violations, "region");
+  markDuplicateQueens(rows.values(), conflicts, violations, "row");
+  for (const [row, positions] of rows.entries()) {
+    if (positions.length > 1) {
+      for (let col = 0; col < size; col += 1) {
+        conflictHints.row.add(positionKey(row, col));
+      }
+    }
+  }
+
+  markDuplicateQueens(columns.values(), conflicts, violations, "column");
+  for (const [col, positions] of columns.entries()) {
+    if (positions.length > 1) {
+      for (let row = 0; row < size; row += 1) {
+        conflictHints.column.add(positionKey(row, col));
+      }
+    }
+  }
+
+  markDuplicateQueens(regions.values(), conflicts, violations, "region");
+  for (const [region, positions] of regions.entries()) {
+    if (positions.length > 1) {
+      for (let row = 0; row < size; row += 1) {
+        for (let col = 0; col < size; col += 1) {
+          if (board[row][col] === region) {
+            conflictHints.region.add(positionKey(row, col));
+          }
+        }
+      }
+    }
+  }
 
   const queenPositions = [...queens].map(parsePositionKey);
   for (let first = 0; first < queenPositions.length; first += 1) {
@@ -72,6 +109,19 @@ export function evaluateGame(board: number[][], queens: Set<string>): GameStatus
         incrementViolation(violations, "adjacent");
         conflicts.add(positionKey(firstRow, firstCol));
         conflicts.add(positionKey(secondRow, secondCol));
+
+        for (const [row, col] of [
+          [firstRow, firstCol],
+          [secondRow, secondCol],
+        ]) {
+          for (let nextRow = row - 1; nextRow <= row + 1; nextRow += 1) {
+            for (let nextCol = col - 1; nextCol <= col + 1; nextCol += 1) {
+              if (nextRow >= 0 && nextRow < size && nextCol >= 0 && nextCol < size) {
+                conflictHints.adjacent.add(positionKey(nextRow, nextCol));
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -84,6 +134,7 @@ export function evaluateGame(board: number[][], queens: Set<string>): GameStatus
   const hasNoConflicts = conflicts.size === 0;
 
   return {
+    conflictHints,
     conflicts,
     isSolved: queens.size === size && hasOnePerRow && hasOnePerColumn && hasOnePerRegion && hasNoConflicts,
     queenCount: queens.size,

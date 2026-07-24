@@ -425,6 +425,12 @@ export default function App() {
                   const hasQueen = queens.has(key);
                   const hasMark = marks.has(key);
                   const isConflict = gameStatus?.conflicts.has(key);
+                  const conflictHintClasses = gameStatus
+                    ? (Object.keys(gameStatus.conflictHints) as ViolationKind[])
+                        .filter((kind) => gameStatus.conflictHints[kind].has(key))
+                        .map((kind) => `hint-${kind}`)
+                    : [];
+                  const isConflictHint = conflictHintClasses.length > 0;
                   const isSolution = showSolution && solutionCells.has(key);
                   const regionStyle = REGION_STYLES[Math.abs(region) % REGION_STYLES.length];
 
@@ -434,6 +440,8 @@ export default function App() {
                         "cell",
                         hasQueen ? "has-queen" : "",
                         hasMark ? "has-mark" : "",
+                        isConflictHint ? "is-conflict-hint" : "",
+                        ...conflictHintClasses,
                         isConflict ? "is-conflict" : "",
                         isSolution ? "is-solution" : "",
                       ]
@@ -460,7 +468,7 @@ export default function App() {
                       onPointerUp={clearLongPressTimer}
                     >
                       {hasQueen && <Crown className="queen-icon" size={26} strokeWidth={2.6} />}
-                      {hasMark && <XIcon className="mark-icon" size={34} strokeWidth={3.4} />}
+                      {hasMark && <XIcon className="mark-icon" size={34} strokeWidth={2.15} />}
                       {isSolution && !hasQueen && <Crown className="solution-icon" size={22} strokeWidth={2.5} />}
                     </button>
                   );
