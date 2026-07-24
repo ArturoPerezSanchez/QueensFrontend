@@ -339,15 +339,14 @@ export default function App() {
               <img src="/queens-logo.svg" alt="" />
             </span>
             <div>
-              <p className="eyebrow">QueensAPI</p>
               <h1>Queens</h1>
             </div>
           </div>
 
           <div className="size-control" aria-label="Board size">
-            <label htmlFor="board-size">Size</label>
             <select
               id="board-size"
+              aria-label="Board size"
               value={size}
               onChange={(event) => setSize(Number(event.target.value))}
               disabled={loadState === "loading"}
