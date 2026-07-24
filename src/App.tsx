@@ -18,7 +18,6 @@ import {
   Medal,
   PartyPopper,
   Palette,
-  PenLine,
   RefreshCcw,
   RotateCcw,
   ShieldX,
@@ -113,6 +112,7 @@ export default function App() {
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [error, setError] = useState<string | null>(null);
   const [showSolution, setShowSolution] = useState(false);
+  const [solutionRevealed, setSolutionRevealed] = useState(false);
   const [showPatterns, setShowPatterns] = useState(() => getStoredPatternPreference());
   const [autoMarkForbidden, setAutoMarkForbidden] = useState(() => getStoredAutoMarkPreference());
   const [showRules, setShowRules] = useState(false);
@@ -152,6 +152,7 @@ export default function App() {
     setLoadState("loading");
     setError(null);
     setShowSolution(false);
+    setSolutionRevealed(false);
     setShowConflictPanel(false);
 
     try {
@@ -179,7 +180,7 @@ export default function App() {
   }, [loadPuzzle, size]);
 
   useEffect(() => {
-    if (!puzzle || gameStatus?.isSolved || loadState !== "ready") {
+    if (!puzzle || gameStatus?.isSolved || loadState !== "ready" || solutionRevealed) {
       return;
     }
 
@@ -188,10 +189,10 @@ export default function App() {
     }, 1000);
 
     return () => window.clearInterval(timer);
-  }, [gameStatus?.isSolved, loadState, puzzle]);
+  }, [gameStatus?.isSolved, loadState, puzzle, solutionRevealed]);
 
   useEffect(() => {
-    if (!gameStatus?.isSolved) {
+    if (!gameStatus?.isSolved || solutionRevealed) {
       return;
     }
 
@@ -208,7 +209,7 @@ export default function App() {
       localStorage.setItem("queens-best-times", JSON.stringify(next));
       return next;
     });
-  }, [elapsedSeconds, gameStatus?.isSolved, size]);
+  }, [elapsedSeconds, gameStatus?.isSolved, size, solutionRevealed]);
 
   useEffect(() => {
     localStorage.setItem("queens-show-patterns", String(showPatterns));
@@ -418,13 +419,22 @@ export default function App() {
   function retryPuzzle(): void {
     setQueens(new Set());
     setManualMarks(new Set());
-    setElapsedSeconds(0);
     setShowSolution(false);
     setShowConflictPanel(false);
   }
 
   function requestNewPuzzle(): void {
     void loadPuzzle(size);
+  }
+
+  function toggleSolution(): void {
+    setShowSolution((current) => {
+      if (!current) {
+        setSolutionRevealed(true);
+      }
+
+      return !current;
+    });
   }
 
   const progress = puzzle && gameStatus ? Math.min(100, Math.round((gameStatus.queenCount / puzzle.size) * 100)) : 0;
@@ -474,7 +484,7 @@ export default function App() {
 
         <div className="stats-grid" aria-live="polite">
           <div className="stat-tile">
-            <span>Timer</span>
+            <span>{solutionRevealed ? "Timer paused" : "Timer"}</span>
             <strong>{formatTime(elapsedSeconds)}</strong>
           </div>
           <div className="stat-tile">
@@ -585,10 +595,12 @@ export default function App() {
               <div>
                 <strong>Beautifully done!</strong>
                 <p>
-                  You solved the {size} x {size} board in {formatTime(elapsedSeconds)}.
+                  {solutionRevealed
+                    ? "Solution viewed, so this run is not saved as a record."
+                    : `You solved the ${size} x ${size} board in ${formatTime(elapsedSeconds)}.`}
                 </p>
               </div>
-              {bestTime === elapsedSeconds && (
+              {!solutionRevealed && bestTime === elapsedSeconds && (
                 <span className="record-badge">
                   <Medal size={16} />
                   New best
@@ -688,7 +700,7 @@ export default function App() {
           <button
             className="secondary-action"
             type="button"
-            onClick={() => setShowSolution((current) => !current)}
+            onClick={toggleSolution}
             disabled={!puzzle?.solution}
           >
             {showSolution ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -748,13 +760,6 @@ export default function App() {
           <div className="rule-item">
             <strong>Marking X</strong>
             <span>Right-click or long-press cells to mark places you want to avoid.</span>
-          </div>
-          <div className="rule-item">
-            <strong>
-              <PenLine size={16} />
-              Auto X
-            </strong>
-            <span>When enabled, placing a queen marks cells that are no longer legal.</span>
           </div>
         </div>
       </aside>
