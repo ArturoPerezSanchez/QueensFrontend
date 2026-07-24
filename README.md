@@ -12,6 +12,9 @@ The app is designed to feel good on both desktop and phone screens: the board sc
 - Timer with local best time per board size
 - Conflict highlighting for rows, columns, regions, and adjacent queens
 - Optional solution reveal
+- X marks for excluding cells while solving
+- Colorblind-friendly region palette with subtle texture patterns
+- Celebratory win feedback with a solved-state panel
 - Responsive layout for mobile, tablet, and desktop
 - Same-origin API proxy setup for local development and Vercel deployment
 
@@ -26,6 +29,21 @@ For a board of size `N`:
 5. Queens cannot touch each other, including diagonally.
 
 These Queens pieces do not attack across full chess diagonals. Only neighboring cells matter for diagonal conflicts.
+
+## Controls
+
+- Left click or tap a cell to place or remove a queen.
+- Right click a cell to mark it with an X.
+- Long press a cell on touch devices to mark it with an X.
+- Use **Retry** to clear the current board without loading a new puzzle.
+- Use **New** to request a fresh puzzle for the selected size.
+- Use **Solution** to reveal the generated solution.
+
+X marks are local notes only. They do not affect the puzzle rules or completion check.
+
+## Accessibility
+
+The board uses a colorblind-friendly palette inspired by high-contrast categorical palettes. Each region also has a subtle texture pattern so regions are not identified by color alone.
 
 ## API Integration
 

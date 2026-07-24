@@ -1,31 +1,72 @@
-import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type MouseEvent,
+  type PointerEvent,
+} from "react";
 import {
   AlertTriangle,
-  CheckCircle2,
   Crown,
   Eye,
   EyeOff,
   Loader2,
+  Medal,
+  PartyPopper,
   RefreshCcw,
   RotateCcw,
   Sparkles,
   Trophy,
+  X as XIcon,
 } from "lucide-react";
 import { fetchPuzzle } from "./api";
 import { BOARD_SIZES, evaluateGame, formatTime, positionKey, toPositionSet } from "./game";
 import type { Puzzle, ViolationKind } from "./types";
 
-const REGION_COLORS = [
-  "#ffd166",
-  "#6ec6ff",
-  "#ef8fa6",
-  "#92d36e",
-  "#c7a5ff",
-  "#ffad66",
-  "#71d6c2",
-  "#f2a7e8",
-  "#a6b7ff",
-  "#d9c76c",
+const REGION_STYLES = [
+  {
+    color: "#f0e442",
+    pattern: "linear-gradient(145deg, rgba(255,255,255,.36), rgba(255,255,255,0) 55%)",
+  },
+  {
+    color: "#56b4e9",
+    pattern: "repeating-linear-gradient(45deg, rgba(255,255,255,.28) 0 4px, transparent 4px 12px)",
+  },
+  {
+    color: "#009e73",
+    pattern: "repeating-linear-gradient(135deg, rgba(255,255,255,.3) 0 3px, transparent 3px 11px)",
+  },
+  {
+    color: "#e69f00",
+    pattern: "radial-gradient(circle at 30% 30%, rgba(255,255,255,.34) 0 2px, transparent 2px 11px)",
+  },
+  {
+    color: "#0072b2",
+    pattern: "repeating-linear-gradient(0deg, rgba(255,255,255,.24) 0 3px, transparent 3px 10px)",
+  },
+  {
+    color: "#cc79a7",
+    pattern: "repeating-linear-gradient(90deg, rgba(255,255,255,.24) 0 3px, transparent 3px 10px)",
+  },
+  {
+    color: "#d55e00",
+    pattern: "radial-gradient(circle at 70% 34%, rgba(255,255,255,.28) 0 2px, transparent 2px 9px)",
+  },
+  {
+    color: "#8da0cb",
+    pattern: "repeating-linear-gradient(45deg, rgba(31,41,51,.14) 0 2px, transparent 2px 9px)",
+  },
+  {
+    color: "#66c2a5",
+    pattern: "repeating-linear-gradient(135deg, rgba(31,41,51,.12) 0 2px, transparent 2px 8px)",
+  },
+  {
+    color: "#b3b3b3",
+    pattern: "linear-gradient(45deg, rgba(255,255,255,.26) 25%, transparent 25% 50%, rgba(31,41,51,.1) 50% 75%, transparent 75%)",
+  },
 ];
 
 type LoadState = "idle" | "loading" | "ready" | "error";
@@ -66,11 +107,14 @@ export default function App() {
   const [size, setSize] = useState(8);
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [queens, setQueens] = useState<Set<string>>(() => new Set());
+  const [marks, setMarks] = useState<Set<string>>(() => new Set());
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [bestTimes, setBestTimes] = useState<BestTimes>(() => getStoredBestTimes());
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [error, setError] = useState<string | null>(null);
   const [showSolution, setShowSolution] = useState(false);
+  const longPressTimer = useRef<number | null>(null);
+  const suppressClickKey = useRef<string | null>(null);
 
   const gameStatus = useMemo(
     () => (puzzle ? evaluateGame(puzzle.board, queens) : null),
@@ -92,6 +136,7 @@ export default function App() {
       const nextPuzzle = await fetchPuzzle(nextSize, signal);
       setPuzzle(nextPuzzle);
       setQueens(new Set());
+      setMarks(new Set());
       setElapsedSeconds(0);
       setLoadState("ready");
     } catch (loadError) {
@@ -156,14 +201,88 @@ export default function App() {
         next.delete(key);
       } else {
         next.add(key);
+        setMarks((currentMarks) => {
+          const nextMarks = new Set(currentMarks);
+          nextMarks.delete(key);
+          return nextMarks;
+        });
       }
 
       return next;
     });
   }
 
+  function toggleMark(row: number, col: number): void {
+    if (!puzzle || gameStatus?.isSolved) {
+      return;
+    }
+
+    const key = positionKey(row, col);
+    setQueens((currentQueens) => {
+      const nextQueens = new Set(currentQueens);
+      nextQueens.delete(key);
+      return nextQueens;
+    });
+    setMarks((currentMarks) => {
+      const nextMarks = new Set(currentMarks);
+
+      if (nextMarks.has(key)) {
+        nextMarks.delete(key);
+      } else {
+        nextMarks.add(key);
+      }
+
+      return nextMarks;
+    });
+  }
+
+  function clearLongPressTimer(): void {
+    if (longPressTimer.current !== null) {
+      window.clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }
+
+  function startLongPressMark(event: PointerEvent<HTMLButtonElement>, row: number, col: number): void {
+    if (event.pointerType === "mouse") {
+      return;
+    }
+
+    clearLongPressTimer();
+    const key = positionKey(row, col);
+    longPressTimer.current = window.setTimeout(() => {
+      toggleMark(row, col);
+      suppressClickKey.current = key;
+      longPressTimer.current = null;
+    }, 520);
+  }
+
+  function handleCellClick(row: number, col: number): void {
+    const key = positionKey(row, col);
+
+    if (suppressClickKey.current === key) {
+      suppressClickKey.current = null;
+      return;
+    }
+
+    toggleQueen(row, col);
+  }
+
+  function handleCellContextMenu(event: MouseEvent<HTMLButtonElement>, row: number, col: number): void {
+    event.preventDefault();
+    const key = positionKey(row, col);
+
+    if (suppressClickKey.current === key) {
+      suppressClickKey.current = null;
+      return;
+    }
+
+    toggleMark(row, col);
+  }
+
   function retryPuzzle(): void {
     setQueens(new Set());
+    setMarks(new Set());
     setElapsedSeconds(0);
     setShowSolution(false);
   }
@@ -258,28 +377,44 @@ export default function App() {
                 row.map((region, colIndex) => {
                   const key = positionKey(rowIndex, colIndex);
                   const hasQueen = queens.has(key);
+                  const hasMark = marks.has(key);
                   const isConflict = gameStatus?.conflicts.has(key);
                   const isSolution = showSolution && solutionCells.has(key);
-                  const color = REGION_COLORS[Math.abs(region) % REGION_COLORS.length];
+                  const regionStyle = REGION_STYLES[Math.abs(region) % REGION_STYLES.length];
 
                   return (
                     <button
                       className={[
                         "cell",
                         hasQueen ? "has-queen" : "",
+                        hasMark ? "has-mark" : "",
                         isConflict ? "is-conflict" : "",
                         isSolution ? "is-solution" : "",
                       ]
                         .filter(Boolean)
                         .join(" ")}
                       key={key}
-                      style={{ "--region-color": color } as CSSProperties}
+                      style={
+                        {
+                          "--region-color": regionStyle.color,
+                          "--region-pattern": regionStyle.pattern,
+                        } as CSSProperties
+                      }
                       type="button"
-                      aria-label={`Row ${rowIndex + 1}, column ${colIndex + 1}, region ${region}`}
+                      aria-label={`Row ${rowIndex + 1}, column ${colIndex + 1}, region ${region}${
+                        hasMark ? ", marked unavailable" : ""
+                      }`}
                       aria-pressed={hasQueen}
-                      onClick={() => toggleQueen(rowIndex, colIndex)}
+                      onClick={() => handleCellClick(rowIndex, colIndex)}
+                      onContextMenu={(event) => handleCellContextMenu(event, rowIndex, colIndex)}
+                      onPointerCancel={clearLongPressTimer}
+                      onPointerDown={(event) => startLongPressMark(event, rowIndex, colIndex)}
+                      onPointerLeave={clearLongPressTimer}
+                      onPointerMove={clearLongPressTimer}
+                      onPointerUp={clearLongPressTimer}
                     >
                       {hasQueen && <Crown className="queen-icon" size={26} strokeWidth={2.6} />}
+                      {hasMark && <XIcon className="mark-icon" size={24} strokeWidth={3} />}
                       {isSolution && !hasQueen && <Crown className="solution-icon" size={22} strokeWidth={2.5} />}
                     </button>
                   );
@@ -296,8 +431,8 @@ export default function App() {
         <div className="status-strip" aria-live="polite">
           {gameStatus?.isSolved ? (
             <span className="success-message">
-              <CheckCircle2 size={18} />
-              Solved in {formatTime(elapsedSeconds)}
+              <PartyPopper size={18} />
+              Brilliant solve in {formatTime(elapsedSeconds)}
             </span>
           ) : hasConflicts ? (
             <span className="warning-message">
@@ -341,6 +476,29 @@ export default function App() {
             {showSolution ? "Hide" : "Solution"}
           </button>
         </div>
+
+        {gameStatus?.isSolved && (
+          <div className="win-panel" role="status" aria-live="assertive">
+            <div className="confetti-field" aria-hidden="true">
+              {Array.from({ length: 18 }, (_, index) => (
+                <span key={index} />
+              ))}
+            </div>
+            <PartyPopper size={30} />
+            <div>
+              <strong>Beautifully done!</strong>
+              <p>
+                You solved the {size} x {size} board in {formatTime(elapsedSeconds)}.
+              </p>
+            </div>
+            {bestTime === elapsedSeconds && (
+              <span className="record-badge">
+                <Medal size={16} />
+                New best
+              </span>
+            )}
+          </div>
+        )}
       </section>
 
       <aside className="side-panel" aria-label="Game summary">
@@ -357,6 +515,7 @@ export default function App() {
           <span>One per column</span>
           <span>One per region</span>
           <span>No touching</span>
+          <span>Right-click marks X</span>
         </div>
       </aside>
     </main>
