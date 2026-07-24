@@ -674,15 +674,6 @@ export default function App() {
           <span style={{ width: `${progress}%` }} />
         </div>
 
-        {gameStatus?.isSolved && (
-          <div className="status-strip" aria-live="polite">
-            <span className="success-message">
-              <PartyPopper size={18} />
-              Brilliant solve in {formatTime(elapsedSeconds)}
-            </span>
-          </div>
-        )}
-
         <div className="action-row">
           <button
             className="secondary-action"
