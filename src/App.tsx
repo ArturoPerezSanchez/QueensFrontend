@@ -92,17 +92,6 @@ function getStoredAutoMarkPreference(): boolean {
   return localStorage.getItem("queens-auto-mark") === "true";
 }
 
-function countCompletedGroups(board: number[][], queens: Set<string>): number {
-  const usedRegions = new Set<number>();
-
-  for (const key of queens) {
-    const [row, col] = key.split(":").map(Number);
-    usedRegions.add(board[row][col]);
-  }
-
-  return usedRegions.size;
-}
-
 function violationLabel(kind: ViolationKind): string {
   const labels: Record<ViolationKind, string> = {
     row: "Rows",
@@ -157,10 +146,6 @@ export default function App() {
 
     return next;
   }, [forbiddenMarks, manualMarks, queens]);
-  const completedRegions = useMemo(
-    () => (puzzle ? countCompletedGroups(puzzle.board, queens) : 0),
-    [puzzle, queens],
-  );
   const bestTime = bestTimes[String(size)];
 
   const loadPuzzle = useCallback(async (nextSize: number, signal?: AbortSignal) => {
@@ -502,12 +487,6 @@ export default function App() {
               {gameStatus?.queenCount ?? 0}/{puzzle?.size ?? size}
             </strong>
           </div>
-          <div className="stat-tile">
-            <span>Regions</span>
-            <strong>
-              {completedRegions}/{puzzle?.size ?? size}
-            </strong>
-          </div>
         </div>
 
         <div className="board-zone">
@@ -750,15 +729,33 @@ export default function App() {
         </div>
 
         <div className="rules-list">
-          <span>One per row</span>
-          <span>One per column</span>
-          <span>One per region</span>
-          <span>No touching</span>
-          <span>Right-click marks X</span>
-          <span>
-            <PenLine size={16} />
-            Auto X marks forbidden cells
-          </span>
+          <div className="rule-item">
+            <strong>One per row</strong>
+            <span>Every horizontal row must contain exactly one queen.</span>
+          </div>
+          <div className="rule-item">
+            <strong>One per column</strong>
+            <span>Every vertical column must contain exactly one queen.</span>
+          </div>
+          <div className="rule-item">
+            <strong>One per region</strong>
+            <span>Each colored area must contain exactly one queen.</span>
+          </div>
+          <div className="rule-item">
+            <strong>No touching</strong>
+            <span>Queens cannot touch, including diagonally adjacent cells.</span>
+          </div>
+          <div className="rule-item">
+            <strong>Marking X</strong>
+            <span>Right-click or long-press cells to mark places you want to avoid.</span>
+          </div>
+          <div className="rule-item">
+            <strong>
+              <PenLine size={16} />
+              Auto X
+            </strong>
+            <span>When enabled, placing a queen marks cells that are no longer legal.</span>
+          </div>
         </div>
       </aside>
       )}

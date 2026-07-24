@@ -203,7 +203,7 @@ h1 {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   overflow: hidden;
   border: 1px solid rgba(23, 33, 43, 0.1);
   border-radius: 999px;
@@ -771,16 +771,28 @@ h1 {
   gap: 8px;
 }
 
-.rules-list span {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+.rule-item {
+  display: grid;
+  gap: 4px;
   padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.64);
   color: var(--ink);
+}
+
+.rule-item strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-weight: 800;
+}
+
+.rule-item span {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 650;
+  line-height: 1.35;
 }
 
 @keyframes spin {
@@ -891,7 +903,7 @@ h1 {
   }
 
   .stats-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     border-radius: 8px;
   }
 
