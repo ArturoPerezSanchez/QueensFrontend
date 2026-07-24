@@ -304,10 +304,14 @@ h1 {
 }
 
 .mark-icon {
-  width: 62%;
-  height: 62%;
-  color: rgba(17, 24, 39, 0.56);
-  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.38));
+  width: 48%;
+  height: 48%;
+  color: rgba(17, 24, 39, 0.28);
+  filter: none;
+}
+
+.cell.is-conflict-hint .mark-icon {
+  color: rgba(17, 24, 39, 0.2);
 }
 
 .cell.is-conflict {

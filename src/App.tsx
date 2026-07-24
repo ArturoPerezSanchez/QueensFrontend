@@ -465,7 +465,7 @@ export default function App() {
                       onPointerUp={clearLongPressTimer}
                     >
                       {hasQueen && <Crown className="queen-icon" size={26} strokeWidth={2.6} />}
-                      {hasMark && <XIcon className="mark-icon" size={34} strokeWidth={2.15} />}
+                      {hasMark && <XIcon className="mark-icon" size={30} strokeWidth={1.45} />}
                       {isSolution && !hasQueen && <Crown className="solution-icon" size={22} strokeWidth={2.5} />}
                     </button>
                   );
