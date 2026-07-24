@@ -13,7 +13,8 @@ The app is designed to feel good on both desktop and phone screens: the board sc
 - Conflict highlighting for rows, columns, regions, and adjacent queens
 - Optional solution reveal
 - X marks for excluding cells while solving
-- Colorblind-friendly region palette with subtle texture patterns
+- Colorblind-friendly region palette
+- Optional texture patterns for players who want extra region separation
 - Celebratory win feedback with a solved-state panel
 - Responsive layout for mobile, tablet, and desktop
 - Same-origin API proxy setup for local development and Vercel deployment
@@ -43,7 +44,7 @@ X marks are local notes only. They do not affect the puzzle rules or completion 
 
 ## Accessibility
 
-The board uses a colorblind-friendly palette inspired by high-contrast categorical palettes. Each region also has a subtle texture pattern so regions are not identified by color alone.
+The board uses a colorblind-friendly palette inspired by high-contrast categorical palettes. Players can turn on optional texture patterns when they want extra region separation beyond color.
 
 ## API Integration
 

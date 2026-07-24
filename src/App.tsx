@@ -16,6 +16,7 @@ import {
   Loader2,
   Medal,
   PartyPopper,
+  Palette,
   RefreshCcw,
   RotateCcw,
   Sparkles,
@@ -81,6 +82,10 @@ function getStoredBestTimes(): BestTimes {
   }
 }
 
+function getStoredPatternPreference(): boolean {
+  return localStorage.getItem("queens-show-patterns") === "true";
+}
+
 function countCompletedGroups(board: number[][], queens: Set<string>): number {
   const usedRegions = new Set<number>();
 
@@ -113,6 +118,7 @@ export default function App() {
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [error, setError] = useState<string | null>(null);
   const [showSolution, setShowSolution] = useState(false);
+  const [showPatterns, setShowPatterns] = useState(() => getStoredPatternPreference());
   const longPressTimer = useRef<number | null>(null);
   const suppressClickKey = useRef<string | null>(null);
 
@@ -187,6 +193,10 @@ export default function App() {
       return next;
     });
   }, [elapsedSeconds, gameStatus?.isSolved, size]);
+
+  useEffect(() => {
+    localStorage.setItem("queens-show-patterns", String(showPatterns));
+  }, [showPatterns]);
 
   function toggleQueen(row: number, col: number): void {
     if (!puzzle || gameStatus?.isSolved) {
@@ -300,7 +310,7 @@ export default function App() {
         <div className="top-bar">
           <div className="brand-lockup">
             <span className="brand-mark" aria-hidden="true">
-              <Crown size={22} strokeWidth={2.4} />
+              <img src="/queens-logo-192.png" alt="" />
             </span>
             <div>
               <p className="eyebrow">QueensAPI</p>
@@ -369,7 +379,7 @@ export default function App() {
 
           {puzzle && loadState === "ready" && (
             <div
-              className="board"
+              className={`board ${showPatterns ? "patterns-enabled" : ""}`}
               style={{ "--board-size": puzzle.size } as CSSProperties}
               aria-label={`${puzzle.size} by ${puzzle.size} Queens board`}
             >
@@ -419,6 +429,29 @@ export default function App() {
                     </button>
                   );
                 }),
+              )}
+            </div>
+          )}
+
+          {gameStatus?.isSolved && (
+            <div className="win-panel board-win-panel" role="status" aria-live="assertive">
+              <div className="confetti-field" aria-hidden="true">
+                {Array.from({ length: 18 }, (_, index) => (
+                  <span key={index} />
+                ))}
+              </div>
+              <PartyPopper size={32} />
+              <div>
+                <strong>Beautifully done!</strong>
+                <p>
+                  You solved the {size} x {size} board in {formatTime(elapsedSeconds)}.
+                </p>
+              </div>
+              {bestTime === elapsedSeconds && (
+                <span className="record-badge">
+                  <Medal size={16} />
+                  New best
+                </span>
               )}
             </div>
           )}
@@ -475,30 +508,16 @@ export default function App() {
             {showSolution ? <EyeOff size={18} /> : <Eye size={18} />}
             {showSolution ? "Hide" : "Solution"}
           </button>
+          <button
+            className="secondary-action"
+            type="button"
+            aria-pressed={showPatterns}
+            onClick={() => setShowPatterns((current) => !current)}
+          >
+            <Palette size={18} />
+            {showPatterns ? "Plain" : "Patterns"}
+          </button>
         </div>
-
-        {gameStatus?.isSolved && (
-          <div className="win-panel" role="status" aria-live="assertive">
-            <div className="confetti-field" aria-hidden="true">
-              {Array.from({ length: 18 }, (_, index) => (
-                <span key={index} />
-              ))}
-            </div>
-            <PartyPopper size={30} />
-            <div>
-              <strong>Beautifully done!</strong>
-              <p>
-                You solved the {size} x {size} board in {formatTime(elapsedSeconds)}.
-              </p>
-            </div>
-            {bestTime === elapsedSeconds && (
-              <span className="record-badge">
-                <Medal size={16} />
-                New best
-              </span>
-            )}
-          </div>
-        )}
       </section>
 
       <aside className="side-panel" aria-label="Game summary">
