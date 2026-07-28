@@ -272,11 +272,19 @@
   min-width: 0;
   padding: 0;
   place-items: center;
-  border-right: 1px solid rgba(35, 51, 61, 0.15);
-  border-bottom: 1px solid rgba(35, 51, 61, 0.15);
   aspect-ratio: 1;
   background: transparent;
   cursor: pointer;
+}
+
+.game-tracks .cell::after {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-right: 1px solid rgba(35, 51, 61, 0.15);
+  border-bottom: 1px solid rgba(35, 51, 61, 0.15);
+  content: "";
+  pointer-events: none;
 }
 
 .game-tracks .cell:nth-child(even) {
@@ -357,6 +365,10 @@
   stroke-width: 19;
 }
 
+.game-tracks .track-tube line.is-butt {
+  stroke-linecap: butt;
+}
+
 .game-tracks .track-tube circle {
   fill: var(--track);
 }
@@ -371,6 +383,7 @@
   stroke-linecap: round;
   stroke-width: 9;
   stroke-dasharray: 13 17;
+  stroke-dashoffset: calc(var(--flow-phase, 0px) * -1);
   animation: track-flow 560ms linear infinite;
 }
 
@@ -742,7 +755,7 @@
 
 @keyframes track-flow {
   to {
-    stroke-dashoffset: -34;
+    stroke-dashoffset: calc((var(--flow-phase, 0px) * -1) - 30px);
   }
 }
 

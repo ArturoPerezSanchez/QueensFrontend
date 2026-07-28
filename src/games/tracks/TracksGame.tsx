@@ -42,8 +42,12 @@ import {
 import type { Board, Position, Puzzle } from "./types";
 
 const CONFETTI_COLORS = ["#168b83", "#f2ad3f", "#3b79a7", "#d55466", "#263642"];
+const DIAGONAL_CROSSING_GAP = 10;
+const FLOW_DASH_PERIOD = 30;
+const TRACK_CONNECTION_OVERLAP = 1;
 
 type FlowCell = {
+  centerPhase: number;
   inbound: number | null;
   outbound: number[];
 };
@@ -71,56 +75,200 @@ function endpointForDirection(direction: number, extension = 0): [number, number
   }
 }
 
-function FlowSegment({ direction, reverse = false }: { direction: number; reverse?: boolean }) {
-  const [edgeX, edgeY] = endpointForDirection(direction, 5);
+function segmentLengthToCenter(endpoint: [number, number]): number {
+  const [edgeX, edgeY] = endpoint;
+  return Math.hypot(edgeX - 50, edgeY - 50);
+}
+
+function logicalSegmentLength(direction: number): number {
+  return segmentLengthToCenter(endpointForDirection(direction));
+}
+
+function drawnFlowSegmentLength(direction: number, endpointGap = 0): number {
+  return segmentLengthToCenter(endpointWithAxisGap(direction, 5, endpointGap));
+}
+
+function isDiagonalDirection(direction: number): boolean {
+  return direction === NORTH_EAST || direction === SOUTH_EAST || direction === SOUTH_WEST || direction === NORTH_WEST;
+}
+
+function inboundFlowPhase(centerPhase: number, direction: number, endpointGap = 0): number {
+  return centerPhase - drawnFlowSegmentLength(direction, endpointGap);
+}
+
+function endpointWithVectorGap(direction: number, extension = 0, endpointGap = 0): [number, number] {
+  if (endpointGap <= 0) {
+    return endpointForDirection(direction, extension);
+  }
+
+  const [edgeX, edgeY] = endpointForDirection(direction);
+  const dx = edgeX - 50;
+  const dy = edgeY - 50;
+  const length = Math.hypot(dx, dy) || 1;
+
+  return [
+    edgeX - (dx / length) * endpointGap,
+    edgeY - (dy / length) * endpointGap,
+  ];
+}
+
+function endpointWithAxisGap(direction: number, extension = 0, endpointGap = 0): [number, number] {
+  if (endpointGap <= 0) {
+    return endpointForDirection(direction, extension);
+  }
+
+  const [edgeX, edgeY] = endpointForDirection(direction);
+
+  return [
+    edgeX === 50 ? edgeX : edgeX + Math.sign(50 - edgeX) * endpointGap,
+    edgeY === 50 ? edgeY : edgeY + Math.sign(50 - edgeY) * endpointGap,
+  ];
+}
+
+function addGapDirection(map: Map<string, Set<number>>, row: number, col: number, direction: number) {
+  const key = positionKey([row, col]);
+  const directions = map.get(key) ?? new Set<number>();
+  directions.add(direction);
+  map.set(key, directions);
+}
+
+function diagonalCrossingGaps(board: Board): Map<string, Set<number>> {
+  const gaps = new Map<string, Set<number>>();
+  const size = board.length;
+
+  for (let row = 1; row < size; row += 1) {
+    for (let col = 1; col < size; col += 1) {
+      const topLeft = board[row - 1][col - 1];
+      const topRight = board[row - 1][col];
+      const bottomLeft = board[row][col - 1];
+      const bottomRight = board[row][col];
+      const northWestToSouthEast = Boolean((topLeft & SOUTH_EAST) && (bottomRight & NORTH_WEST));
+      const northEastToSouthWest = Boolean((topRight & SOUTH_WEST) && (bottomLeft & NORTH_EAST));
+
+      if (northWestToSouthEast && northEastToSouthWest) {
+        addGapDirection(gaps, row - 1, col, SOUTH_WEST);
+        addGapDirection(gaps, row, col - 1, NORTH_EAST);
+      }
+    }
+  }
+
+  return gaps;
+}
+
+function FlowSegment({
+  direction,
+  endpointGap = 0,
+  phase,
+  reverse = false,
+}: {
+  direction: number;
+  endpointGap?: number;
+  phase: number;
+  reverse?: boolean;
+}) {
+  const [edgeX, edgeY] = endpointWithAxisGap(direction, 5, endpointGap);
+  const style = { "--flow-phase": `${phase % FLOW_DASH_PERIOD}px` } as CSSProperties;
+
   return reverse ? (
-    <line x1={edgeX} y1={edgeY} x2="50" y2="50" />
+    <line style={style} x1={edgeX} y1={edgeY} x2="50" y2="50" />
   ) : (
-    <line x1="50" y1="50" x2={edgeX} y2={edgeY} />
+    <line style={style} x1="50" y1="50" x2={edgeX} y2={edgeY} />
   );
 }
 
-function TrackSegments({ extend = 0, mask }: { extend?: number; mask: number }) {
-  const [northX, northY] = endpointForDirection(NORTH, extend);
-  const [northEastX, northEastY] = endpointForDirection(NORTH_EAST, extend);
-  const [eastX, eastY] = endpointForDirection(EAST, extend);
-  const [southEastX, southEastY] = endpointForDirection(SOUTH_EAST, extend);
-  const [southX, southY] = endpointForDirection(SOUTH, extend);
-  const [southWestX, southWestY] = endpointForDirection(SOUTH_WEST, extend);
-  const [westX, westY] = endpointForDirection(WEST, extend);
-  const [northWestX, northWestY] = endpointForDirection(NORTH_WEST, extend);
+function TrackSegments({
+  buttDirections,
+  buttOverlap = 0,
+  extend = 0,
+  gapDirections,
+  gapMode = "vector",
+  mask,
+}: {
+  buttDirections?: ReadonlySet<number>;
+  buttOverlap?: number;
+  extend?: number;
+  gapDirections?: ReadonlySet<number>;
+  gapMode?: "axis" | "vector";
+  mask: number;
+}) {
+  const segmentDirections = DIRECTIONS.filter((direction) => Boolean(mask & direction)).sort((first, second) => {
+    const firstHasFluid = buttDirections?.has(first) ? 0 : 1;
+    const secondHasFluid = buttDirections?.has(second) ? 0 : 1;
+    return firstHasFluid - secondHasFluid;
+  });
 
   return (
     <>
-      {Boolean(mask & NORTH) && <line x1="50" y1="50" x2={northX} y2={northY} />}
-      {Boolean(mask & NORTH_EAST) && <line x1="50" y1="50" x2={northEastX} y2={northEastY} />}
-      {Boolean(mask & EAST) && <line x1="50" y1="50" x2={eastX} y2={eastY} />}
-      {Boolean(mask & SOUTH_EAST) && <line x1="50" y1="50" x2={southEastX} y2={southEastY} />}
-      {Boolean(mask & SOUTH) && <line x1="50" y1="50" x2={southX} y2={southY} />}
-      {Boolean(mask & SOUTH_WEST) && <line x1="50" y1="50" x2={southWestX} y2={southWestY} />}
-      {Boolean(mask & WEST) && <line x1="50" y1="50" x2={westX} y2={westY} />}
-      {Boolean(mask & NORTH_WEST) && <line x1="50" y1="50" x2={northWestX} y2={northWestY} />}
+      {segmentDirections.map((direction) => {
+        const hasEndpointGap = Boolean(gapDirections?.has(direction));
+        const hasButtCap = Boolean(buttDirections?.has(direction)) || hasEndpointGap;
+        const overlap = hasButtCap && !hasEndpointGap ? buttOverlap : 0;
+        const endpoint = gapMode === "axis" ? endpointWithAxisGap : endpointWithVectorGap;
+        const [x2, y2] = endpoint(direction, extend + overlap, hasEndpointGap ? DIAGONAL_CROSSING_GAP : 0);
+        const className = hasButtCap ? "is-butt" : undefined;
+
+        return (
+          <line
+            className={className}
+            key={direction}
+            x1="50"
+            y1="50"
+            x2={x2}
+            y2={y2}
+          />
+        );
+      })}
     </>
   );
 }
 
-function TrackGlyph({ flow, mask }: { flow?: FlowCell; mask: number }) {
+function TrackGlyph({ flow, gapDirections, mask }: { flow?: FlowCell; gapDirections?: ReadonlySet<number>; mask: number }) {
+  const fluidDirections = new Set([
+    ...(flow?.inbound === null || flow?.inbound === undefined ? [] : [flow.inbound]),
+    ...(flow?.outbound ?? []),
+  ]);
+  const diagonalJointDirections = [...fluidDirections].filter(
+    (direction) => isDiagonalDirection(direction) && !gapDirections?.has(direction),
+  );
+  const gapForDirection = (direction: number) => (gapDirections?.has(direction) ? DIAGONAL_CROSSING_GAP : 0);
+
   return (
-    <svg className="track-glyph" viewBox="0 0 100 100" aria-hidden="true">
+    <svg className={`track-glyph ${flow ? "has-fluid" : ""}`} viewBox="0 0 100 100" aria-hidden="true">
       <g className="track-tube">
-        <TrackSegments mask={mask} />
+        <TrackSegments
+          buttDirections={fluidDirections}
+          buttOverlap={TRACK_CONNECTION_OVERLAP}
+          gapDirections={gapDirections}
+          mask={mask}
+        />
         {mask !== 0 && <circle cx="50" cy="50" r="10" />}
       </g>
       <g className="track-fluid">
         {flow ? (
           <>
-            {flow.inbound !== null && <FlowSegment direction={flow.inbound} reverse />}
+            {flow.inbound !== null && (
+              <FlowSegment
+                direction={flow.inbound}
+                endpointGap={gapForDirection(flow.inbound)}
+                phase={inboundFlowPhase(flow.centerPhase, flow.inbound, gapForDirection(flow.inbound))}
+                reverse
+              />
+            )}
             {flow.outbound.map((direction) => (
-              <FlowSegment direction={direction} key={direction} />
+              <FlowSegment
+                direction={direction}
+                endpointGap={gapForDirection(direction)}
+                key={direction}
+                phase={flow.centerPhase}
+              />
             ))}
+            {diagonalJointDirections.map((direction) => {
+              const [cx, cy] = endpointForDirection(direction);
+              return <circle className="flow-joint" cx={cx} cy={cy} key={`joint-${direction}`} r="6" />;
+            })}
           </>
         ) : (
-          <TrackSegments extend={5} mask={mask} />
+          <TrackSegments extend={5} gapDirections={gapDirections} gapMode="axis" mask={mask} />
         )}
         {mask !== 0 && <circle cx="50" cy="50" r="6" />}
       </g>
@@ -142,13 +290,13 @@ function connectedFlowMap(board: Board, start: Position): Map<string, FlowCell> 
     return flow;
   }
 
-  const queue: Array<{ inbound: number | null; position: Position }> = [
-    { inbound: null, position: start },
+  const queue: Array<{ centerPhase: number; inbound: number | null; position: Position }> = [
+    { centerPhase: 0, inbound: null, position: start },
   ];
   const seen = new Set<string>();
 
   while (queue.length) {
-    const { inbound, position } = queue.shift()!;
+    const { centerPhase, inbound, position } = queue.shift()!;
     const key = positionKey(position);
     if (seen.has(key)) {
       continue;
@@ -181,10 +329,17 @@ function connectedFlowMap(board: Board, start: Position): Map<string, FlowCell> 
       }
 
       outbound.push(direction);
-      queue.push({ inbound: OPPOSITE_DIRECTIONS[direction], position: neighbor });
+      queue.push({
+        centerPhase:
+          centerPhase +
+          logicalSegmentLength(direction) +
+          logicalSegmentLength(OPPOSITE_DIRECTIONS[direction]),
+        inbound: OPPOSITE_DIRECTIONS[direction],
+        position: neighbor,
+      });
     }
 
-    flow.set(key, { inbound, outbound });
+    flow.set(key, { centerPhase, inbound, outbound });
   }
 
   return flow;
@@ -215,6 +370,7 @@ export function TracksGame() {
     () => (puzzle ? connectedFlowMap(displayedBoard, puzzle.start) : new Map<string, FlowCell>()),
     [displayedBoard, puzzle],
   );
+  const crossingGaps = useMemo(() => diagonalCrossingGaps(displayedBoard), [displayedBoard]);
   const connectedTracks = connectedFlow;
   const displayedBestTime = isNewBest ? elapsedSeconds : bestTime;
 
@@ -459,7 +615,7 @@ export function TracksGame() {
                                 : ", track piece"
                         }`}
                       >
-                        <TrackGlyph flow={flow} mask={mask} />
+                        <TrackGlyph flow={flow} gapDirections={crossingGaps.get(key)} mask={mask} />
                         {isEndpoint && <span className="endpoint-dot" aria-hidden="true" />}
                       </button>
                     );
