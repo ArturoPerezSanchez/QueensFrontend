@@ -9,17 +9,14 @@ import {
   EyeOff,
   Lightbulb,
   LoaderCircle,
-  Moon,
   PartyPopper,
   RefreshCcw,
   RotateCcw,
-  Sun,
   Trophy,
   Undo2,
   X,
 } from "lucide-react";
 import { fetchPuzzle } from "./api";
-import { useTheme } from "../../useTheme";
 import {
   BOARD_SIZES,
   cloneBoard,
@@ -39,7 +36,6 @@ function solutionSet(solution: Position[] | null): Set<string> {
 }
 
 export function LightsGame() {
-  const { theme, toggleTheme } = useTheme();
   const [selectedSize, setSelectedSize] = useState(5);
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [board, setBoard] = useState<Board>([]);
@@ -219,16 +215,6 @@ export function LightsGame() {
               </select>
               <ChevronDown aria-hidden="true" size={16} />
             </label>
-            <button
-              className="icon-action"
-              type="button"
-              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-              aria-pressed={theme === "dark"}
-              onClick={toggleTheme}
-              title={theme === "dark" ? "Light theme" : "Dark theme"}
-            >
-              {theme === "dark" ? <Sun aria-hidden="true" size={21} /> : <Moon aria-hidden="true" size={21} />}
-            </button>
             <button
               className="icon-action"
               type="button"

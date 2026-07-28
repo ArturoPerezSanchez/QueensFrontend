@@ -703,12 +703,12 @@
 .game-zip .rules-panel {
   position: fixed;
   z-index: 21;
-  top: 0;
+  top: var(--suite-nav-offset);
   right: 0;
   display: grid;
   align-content: start;
   width: min(390px, 92vw);
-  height: 100dvh;
+  height: calc(100dvh - var(--suite-nav-offset));
   overflow-y: auto;
   padding: 22px;
   gap: 18px;

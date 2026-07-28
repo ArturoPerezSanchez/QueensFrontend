@@ -39,6 +39,10 @@ export function cloneBoard(board: Board): Board {
   return board.map((row) => [...row]);
 }
 
+export function samePosition(first: Position, second: Position): boolean {
+  return first[0] === second[0] && first[1] === second[1];
+}
+
 export function formatTime(totalSeconds: number): string {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
@@ -82,6 +86,17 @@ export function rotateCell(board: Board, row: number, col: number): Board {
   const next = cloneBoard(board);
   next[row][col] = rotateMask(next[row][col]);
   return next;
+}
+
+export function directionBetween(first: Position, second: Position): number {
+  const delta: Position = [second[0] - first[0], second[1] - first[1]];
+  for (const direction of DIRECTIONS) {
+    const directionDelta = DIRECTION_DELTAS[direction];
+    if (samePosition(delta, directionDelta)) {
+      return direction;
+    }
+  }
+  throw new Error("Track positions must be adjacent.");
 }
 
 export function trackCount(board: Board): number {
@@ -154,24 +169,91 @@ export function isSolved(board: Board, puzzle: Puzzle): boolean {
   return alignedCount(board, puzzle.solution) === trackCount(puzzle.solution);
 }
 
-export function nextHintCell(board: Board, solution: Board): Position | null {
-  for (let row = 0; row < board.length; row += 1) {
-    for (let col = 0; col < board.length; col += 1) {
-      if (solution[row][col] !== 0 && board[row][col] !== solution[row][col]) {
-        return [row, col];
-      }
-    }
+export function solutionPath(solution: Board, start: Position, end: Position): Position[] {
+  const size = solution.length;
+  if (size === 0 || solution[start[0]]?.[start[1]] === 0) {
+    return [];
   }
-  return null;
+
+  const path: Position[] = [start];
+  let previous: Position | null = null;
+  let current = start;
+
+  while (!samePosition(current, end)) {
+    const mask = solution[current[0]][current[1]];
+    let next: Position | null = null;
+
+    for (const direction of DIRECTIONS) {
+      if (!(mask & direction)) {
+        continue;
+      }
+
+      const [dr, dc] = DIRECTION_DELTAS[direction];
+      const candidate: Position = [current[0] + dr, current[1] + dc];
+      if (
+        candidate[0] < 0 ||
+        candidate[1] < 0 ||
+        candidate[0] >= size ||
+        candidate[1] >= size ||
+        (previous && samePosition(candidate, previous))
+      ) {
+        continue;
+      }
+
+      next = candidate;
+      break;
+    }
+
+    if (!next || path.some((position) => samePosition(position, next))) {
+      break;
+    }
+
+    previous = current;
+    current = next;
+    path.push(current);
+  }
+
+  return path;
 }
 
-export function applyHint(board: Board, solution: Board): Board {
-  const hint = nextHintCell(board, solution);
+export function boardWithStartAligned(puzzle: Puzzle): Board {
+  const next = cloneBoard(puzzle.board);
+  next[puzzle.start[0]][puzzle.start[1]] = puzzle.solution[puzzle.start[0]][puzzle.start[1]];
+  return next;
+}
+
+export function correctFlowLength(board: Board, puzzle: Puzzle): number {
+  const path = solutionPath(puzzle.solution, puzzle.start, puzzle.end);
+  let length = 0;
+
+  for (const [row, col] of path) {
+    if (board[row][col] !== puzzle.solution[row][col]) {
+      break;
+    }
+    length += 1;
+  }
+
+  return length;
+}
+
+export function nextFlowHintCell(board: Board, puzzle: Puzzle): Position | null {
+  const path = solutionPath(puzzle.solution, puzzle.start, puzzle.end);
+  const index = correctFlowLength(board, puzzle);
+  return path[index] ?? null;
+}
+
+export function applyFlowHint(board: Board, puzzle: Puzzle): Board {
+  const connected = connectedTrackKeys(board, puzzle.start);
+  const path = solutionPath(puzzle.solution, puzzle.start, puzzle.end);
+  const connectedWrongCell =
+    path.find(([row, col]) => connected.has(positionKey([row, col])) && board[row][col] !== puzzle.solution[row][col]) ??
+    null;
+  const hint = connectedWrongCell ?? nextFlowHintCell(board, puzzle);
   if (!hint) {
     return board;
   }
   const next = cloneBoard(board);
-  next[hint[0]][hint[1]] = solution[hint[0]][hint[1]];
+  next[hint[0]][hint[1]] = puzzle.solution[hint[0]][hint[1]];
   return next;
 }
 

@@ -16,20 +16,17 @@ import {
   EyeOff,
   Loader2,
   Medal,
-  Moon,
   PartyPopper,
   Palette,
   RefreshCcw,
   RotateCcw,
   ShieldX,
-  Sun,
   Trophy,
   X as XIcon,
 } from "lucide-react";
 import { fetchPuzzle } from "./api";
 import { BOARD_SIZES, evaluateGame, formatTime, getForbiddenMarks, positionKey, toPositionSet } from "./game";
 import type { Puzzle, ViolationKind } from "./types";
-import { useTheme } from "../../useTheme";
 
 const REGION_STYLES = [
   {
@@ -106,7 +103,6 @@ function violationLabel(kind: ViolationKind): string {
 }
 
 export function QueensGame() {
-  const { theme, toggleTheme } = useTheme();
   const [size, setSize] = useState(8);
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [queens, setQueens] = useState<Set<string>>(() => new Set());
@@ -473,17 +469,6 @@ export function QueensGame() {
               </select>
               <ChevronDown size={16} aria-hidden="true" />
             </div>
-
-            <button
-              className="icon-action"
-              type="button"
-              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-              aria-pressed={theme === "dark"}
-              onClick={toggleTheme}
-              title={theme === "dark" ? "Light theme" : "Dark theme"}
-            >
-              {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
 
             <button
               className="icon-action"

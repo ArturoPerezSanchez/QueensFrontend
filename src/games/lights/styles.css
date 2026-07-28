@@ -7,7 +7,7 @@
   --surface: rgba(255, 255, 255, 0.74);
   --page: #eef1ef;
   --cell: #f7faf8;
-  --cell-alt: #edf2ef;
+  --cell-alt: #f7faf8;
   --glow: #f2b642;
   --glow-soft: #ffe7a8;
   --route: #168b83;
@@ -22,8 +22,8 @@
   --line: rgba(238, 245, 238, 0.15);
   --surface: rgba(25, 32, 27, 0.78);
   --page: #121713;
-  --cell: #222a23;
-  --cell-alt: #1b221d;
+  --cell: #202821;
+  --cell-alt: #202821;
   --glow: #ffc84d;
   --glow-soft: #ffe49a;
   --route: #42c6a8;
@@ -45,6 +45,27 @@
 [data-theme="dark"] .game-lights .icon-action:hover {
   color: var(--ink);
   background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .game-lights .cell,
+[data-theme="dark"] .game-lights .cell:nth-child(even) {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0) 78%),
+    var(--cell);
+}
+
+[data-theme="dark"] .game-lights .cell.is-solution::after {
+  border-color: rgba(78, 232, 193, 0.96);
+  box-shadow:
+    inset 0 0 0 1px rgba(78, 232, 193, 0.38),
+    0 0 18px rgba(78, 232, 193, 0.42);
+}
+
+[data-theme="dark"] .game-lights .press-dot {
+  background: #6ff3cf;
+  box-shadow:
+    0 0 0 5px rgba(111, 243, 207, 0.26),
+    0 0 18px rgba(111, 243, 207, 0.68);
 }
 
 .game-lights * {
@@ -260,7 +281,7 @@
   border-bottom: 1px solid rgba(35, 51, 61, 0.15);
   aspect-ratio: 1;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0) 90%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0) 82%),
     var(--cell);
   cursor: pointer;
   transition:
@@ -271,7 +292,7 @@
 
 .game-lights .cell:nth-child(even) {
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0) 90%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0) 82%),
     var(--cell-alt);
 }
 
@@ -328,6 +349,7 @@
   border-radius: 999px;
   background: var(--route);
   box-shadow: 0 0 0 4px rgba(22, 139, 131, 0.2);
+  animation: lights-flow 1.1s ease-in-out infinite;
 }
 
 .game-lights .progress-track {
@@ -517,12 +539,12 @@
 .game-lights .rules-panel {
   position: fixed;
   z-index: 21;
-  top: 0;
+  top: var(--suite-nav-offset);
   right: 0;
   display: grid;
   align-content: start;
   width: min(390px, 92vw);
-  height: 100dvh;
+  height: calc(100dvh - var(--suite-nav-offset));
   overflow-y: auto;
   padding: 22px;
   gap: 18px;
@@ -653,6 +675,19 @@
   to {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes lights-flow {
+  0%,
+  100% {
+    transform: scale(0.88);
+    opacity: 0.72;
+  }
+
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
   }
 }
 

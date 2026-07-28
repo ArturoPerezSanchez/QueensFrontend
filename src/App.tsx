@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Crown, Grid2X2, Lightbulb, Moon, Route, Sparkles, Zap } from "lucide-react";
+import { Crown, Grid2X2, Lightbulb, Moon, Route, Sun, Zap } from "lucide-react";
 import { QueensGame } from "./games/queens/QueensGame";
 import { TangoGame } from "./games/tango/TangoGame";
 import { LightsGame } from "./games/lights/LightsGame";
 import { TracksGame } from "./games/tracks/TracksGame";
 import { ZipGame } from "./games/zip/ZipGame";
+import { useTheme } from "./useTheme";
 import "./games/queens/styles.css";
 import "./games/tango/styles.css";
 import "./games/lights/styles.css";
@@ -86,6 +87,7 @@ function setFavicon(href: string): void {
 
 export default function App() {
   const [route, setRoute] = useState<RouteState>(() => routeFromLocation());
+  const { theme, toggleTheme } = useTheme();
   const activeGame = route === "menu" ? null : route;
   const game = activeGame ? GAMES[activeGame] : null;
   const GameComponent = game?.component;
@@ -129,6 +131,16 @@ export default function App() {
             );
           })}
         </div>
+        <button
+          className="suite-theme-button"
+          type="button"
+          aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+          aria-pressed={theme === "dark"}
+          onClick={toggleTheme}
+          title={theme === "dark" ? "Light theme" : "Dark theme"}
+        >
+          {theme === "dark" ? <Sun aria-hidden="true" size={18} /> : <Moon aria-hidden="true" size={18} />}
+        </button>
       </nav>
       {GameComponent ? <GameComponent /> : <MainMenu navItems={navItems} />}
     </div>
@@ -143,10 +155,6 @@ function MainMenu({
   return (
     <main className="menu-shell" aria-labelledby="menu-title">
       <section className="menu-heading">
-        <div className="menu-kicker">
-          <Sparkles aria-hidden="true" size={18} />
-          <span>Puzzle suite</span>
-        </div>
         <h1 id="menu-title">Choose a game</h1>
         <p>Pick a board and jump straight into a fresh puzzle.</p>
       </section>

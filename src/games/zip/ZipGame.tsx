@@ -17,17 +17,14 @@ import {
   EyeOff,
   Lightbulb,
   LoaderCircle,
-  Moon,
   PartyPopper,
   RefreshCcw,
   RotateCcw,
-  Sun,
   Trophy,
   Undo2,
   X,
 } from "lucide-react";
 import { fetchPuzzle } from "./api";
-import { useTheme } from "../../useTheme";
 import {
   BOARD_SIZES,
   createInitialPath,
@@ -35,6 +32,7 @@ import {
   isSolved,
   pathPoints,
   positionKey,
+  samePosition,
   solutionPrefixWithHint,
   tryStep,
 } from "./game";
@@ -88,7 +86,6 @@ function cellFromPointer(event: ReactPointerEvent<HTMLElement>): Position | null
 }
 
 export function ZipGame() {
-  const { theme, toggleTheme } = useTheme();
   const [selectedSize, setSelectedSize] = useState(6);
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [path, setPath] = useState<Position[]>([]);
@@ -228,8 +225,12 @@ export function ZipGame() {
   const moveCopy = invalidMove ? invalidMoveCopy(invalidMove) : null;
 
   const attemptTarget = useCallback(
-    (target: Position) => {
+    (target: Position, options: { allowRewind: boolean }) => {
       if (!puzzle || showSolution || isSolved(pathRef.current, puzzle)) {
+        return;
+      }
+
+      if (!options.allowRewind && pathRef.current.some((position) => samePosition(position, target))) {
         return;
       }
 
@@ -279,7 +280,7 @@ export function ZipGame() {
     event.preventDefault();
     drawingRef.current = true;
     event.currentTarget.setPointerCapture(event.pointerId);
-    attemptTarget(target);
+    attemptTarget(target, { allowRewind: true });
   };
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -290,7 +291,7 @@ export function ZipGame() {
     event.preventDefault();
     const target = cellFromPointer(event);
     if (target) {
-      attemptTarget(target);
+      attemptTarget(target, { allowRewind: false });
     }
   };
 
@@ -375,16 +376,6 @@ export function ZipGame() {
               </select>
               <ChevronDown aria-hidden="true" size={16} />
             </label>
-            <button
-              className="icon-action"
-              type="button"
-              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-              aria-pressed={theme === "dark"}
-              onClick={toggleTheme}
-              title={theme === "dark" ? "Light theme" : "Dark theme"}
-            >
-              {theme === "dark" ? <Sun aria-hidden="true" size={21} /> : <Moon aria-hidden="true" size={21} />}
-            </button>
             <button
               className="icon-action"
               type="button"
@@ -473,7 +464,7 @@ export function ZipGame() {
                         }${visited.has(key) ? ", in path" : ""}`}
                         onClick={(event) => {
                           if (event.detail === 0) {
-                            attemptTarget([row, col]);
+                            attemptTarget([row, col], { allowRewind: true });
                           }
                         }}
                       >

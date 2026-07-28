@@ -26,7 +26,6 @@ import {
   X,
 } from "lucide-react";
 import { fetchPuzzle } from "./api";
-import { useTheme } from "../../useTheme";
 import {
   BOARD_SIZES,
   cloneBoard,
@@ -74,7 +73,6 @@ function metricLabel(count: number): string {
 }
 
 export function TangoGame() {
-  const { theme, toggleTheme } = useTheme();
   const [selectedSize, setSelectedSize] = useState(6);
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [entries, setEntries] = useState<CellValue[][]>([]);
@@ -284,16 +282,6 @@ export function TangoGame() {
               </select>
               <ChevronDown aria-hidden="true" size={16} />
             </label>
-            <button
-              className="icon-action"
-              type="button"
-              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-              aria-pressed={theme === "dark"}
-              onClick={toggleTheme}
-              title={theme === "dark" ? "Light theme" : "Dark theme"}
-            >
-              {theme === "dark" ? <Sun aria-hidden="true" size={21} /> : <Moon aria-hidden="true" size={21} />}
-            </button>
             <button
               className="icon-action"
               type="button"

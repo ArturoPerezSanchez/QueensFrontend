@@ -9,56 +9,102 @@ import {
   EyeOff,
   Lightbulb,
   LoaderCircle,
-  Moon,
   PartyPopper,
   RefreshCcw,
   RotateCcw,
-  Sun,
   Trophy,
   Undo2,
   X,
 } from "lucide-react";
 import { fetchPuzzle } from "./api";
-import { useTheme } from "../../useTheme";
 import {
   BOARD_SIZES,
+  DIRECTION_DELTAS,
+  DIRECTIONS,
   EAST,
   NORTH,
   NORTH_EAST,
   NORTH_WEST,
+  OPPOSITE_DIRECTIONS,
   SOUTH,
   SOUTH_EAST,
   SOUTH_WEST,
   WEST,
-  applyHint,
+  applyFlowHint,
+  boardWithStartAligned,
   cloneBoard,
-  connectedTrackKeys,
   formatTime,
   isSolved,
   positionKey,
   rotateCell,
   trackCount,
 } from "./game";
-import type { Board, Puzzle } from "./types";
+import type { Board, Position, Puzzle } from "./types";
 
 const CONFETTI_COLORS = ["#168b83", "#f2ad3f", "#3b79a7", "#d55466", "#263642"];
 
-function TrackSegments({ mask }: { mask: number }) {
+type FlowCell = {
+  inbound: number | null;
+  outbound: number[];
+};
+
+function endpointForDirection(direction: number, extension = 0): [number, number] {
+  switch (direction) {
+    case NORTH:
+      return [50, -extension];
+    case NORTH_EAST:
+      return [100 + extension, -extension];
+    case EAST:
+      return [100 + extension, 50];
+    case SOUTH_EAST:
+      return [100 + extension, 100 + extension];
+    case SOUTH:
+      return [50, 100 + extension];
+    case SOUTH_WEST:
+      return [-extension, 100 + extension];
+    case WEST:
+      return [-extension, 50];
+    case NORTH_WEST:
+      return [-extension, -extension];
+    default:
+      return [50, 50];
+  }
+}
+
+function FlowSegment({ direction, reverse = false }: { direction: number; reverse?: boolean }) {
+  const [edgeX, edgeY] = endpointForDirection(direction, 5);
+  return reverse ? (
+    <line x1={edgeX} y1={edgeY} x2="50" y2="50" />
+  ) : (
+    <line x1="50" y1="50" x2={edgeX} y2={edgeY} />
+  );
+}
+
+function TrackSegments({ extend = 0, mask }: { extend?: number; mask: number }) {
+  const [northX, northY] = endpointForDirection(NORTH, extend);
+  const [northEastX, northEastY] = endpointForDirection(NORTH_EAST, extend);
+  const [eastX, eastY] = endpointForDirection(EAST, extend);
+  const [southEastX, southEastY] = endpointForDirection(SOUTH_EAST, extend);
+  const [southX, southY] = endpointForDirection(SOUTH, extend);
+  const [southWestX, southWestY] = endpointForDirection(SOUTH_WEST, extend);
+  const [westX, westY] = endpointForDirection(WEST, extend);
+  const [northWestX, northWestY] = endpointForDirection(NORTH_WEST, extend);
+
   return (
     <>
-      {Boolean(mask & NORTH) && <line x1="50" y1="50" x2="50" y2="0" />}
-      {Boolean(mask & NORTH_EAST) && <line x1="50" y1="50" x2="100" y2="0" />}
-      {Boolean(mask & EAST) && <line x1="50" y1="50" x2="100" y2="50" />}
-      {Boolean(mask & SOUTH_EAST) && <line x1="50" y1="50" x2="100" y2="100" />}
-      {Boolean(mask & SOUTH) && <line x1="50" y1="50" x2="50" y2="100" />}
-      {Boolean(mask & SOUTH_WEST) && <line x1="50" y1="50" x2="0" y2="100" />}
-      {Boolean(mask & WEST) && <line x1="50" y1="50" x2="0" y2="50" />}
-      {Boolean(mask & NORTH_WEST) && <line x1="50" y1="50" x2="0" y2="0" />}
+      {Boolean(mask & NORTH) && <line x1="50" y1="50" x2={northX} y2={northY} />}
+      {Boolean(mask & NORTH_EAST) && <line x1="50" y1="50" x2={northEastX} y2={northEastY} />}
+      {Boolean(mask & EAST) && <line x1="50" y1="50" x2={eastX} y2={eastY} />}
+      {Boolean(mask & SOUTH_EAST) && <line x1="50" y1="50" x2={southEastX} y2={southEastY} />}
+      {Boolean(mask & SOUTH) && <line x1="50" y1="50" x2={southX} y2={southY} />}
+      {Boolean(mask & SOUTH_WEST) && <line x1="50" y1="50" x2={southWestX} y2={southWestY} />}
+      {Boolean(mask & WEST) && <line x1="50" y1="50" x2={westX} y2={westY} />}
+      {Boolean(mask & NORTH_WEST) && <line x1="50" y1="50" x2={northWestX} y2={northWestY} />}
     </>
   );
 }
 
-function TrackGlyph({ mask }: { mask: number }) {
+function TrackGlyph({ flow, mask }: { flow?: FlowCell; mask: number }) {
   return (
     <svg className="track-glyph" viewBox="0 0 100 100" aria-hidden="true">
       <g className="track-tube">
@@ -66,15 +112,85 @@ function TrackGlyph({ mask }: { mask: number }) {
         {mask !== 0 && <circle cx="50" cy="50" r="10" />}
       </g>
       <g className="track-fluid">
-        <TrackSegments mask={mask} />
+        {flow ? (
+          <>
+            {flow.inbound !== null && <FlowSegment direction={flow.inbound} reverse />}
+            {flow.outbound.map((direction) => (
+              <FlowSegment direction={direction} key={direction} />
+            ))}
+          </>
+        ) : (
+          <TrackSegments extend={5} mask={mask} />
+        )}
         {mask !== 0 && <circle cx="50" cy="50" r="6" />}
       </g>
     </svg>
   );
 }
 
+function connectedFlowMap(board: Board, start: Position): Map<string, FlowCell> {
+  const size = board.length;
+  const flow = new Map<string, FlowCell>();
+  if (
+    size === 0 ||
+    start[0] < 0 ||
+    start[1] < 0 ||
+    start[0] >= size ||
+    start[1] >= size ||
+    board[start[0]][start[1]] === 0
+  ) {
+    return flow;
+  }
+
+  const queue: Array<{ inbound: number | null; position: Position }> = [
+    { inbound: null, position: start },
+  ];
+  const seen = new Set<string>();
+
+  while (queue.length) {
+    const { inbound, position } = queue.shift()!;
+    const key = positionKey(position);
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+
+    const [row, col] = position;
+    const mask = board[row][col];
+    const outbound: number[] = [];
+
+    for (const direction of DIRECTIONS) {
+      if (!(mask & direction) || direction === inbound) {
+        continue;
+      }
+
+      const [dr, dc] = DIRECTION_DELTAS[direction];
+      const neighbor: Position = [row + dr, col + dc];
+      if (
+        neighbor[0] < 0 ||
+        neighbor[1] < 0 ||
+        neighbor[0] >= size ||
+        neighbor[1] >= size
+      ) {
+        continue;
+      }
+
+      const neighborMask = board[neighbor[0]][neighbor[1]];
+      if (!(neighborMask & OPPOSITE_DIRECTIONS[direction])) {
+        continue;
+      }
+
+      outbound.push(direction);
+      queue.push({ inbound: OPPOSITE_DIRECTIONS[direction], position: neighbor });
+    }
+
+    flow.set(key, { inbound, outbound });
+  }
+
+  return flow;
+}
+
 export function TracksGame() {
-  const { theme, toggleTheme } = useTheme();
   const [selectedSize, setSelectedSize] = useState(7);
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [board, setBoard] = useState<Board>([]);
@@ -95,16 +211,17 @@ export function TracksGame() {
   const isNewBest = solved && !assisted && (bestTime === null || elapsedSeconds < bestTime);
   const totalTracks = puzzle ? trackCount(puzzle.solution) : 0;
   const displayedBoard = showSolution && puzzle ? puzzle.solution : board;
-  const connectedTracks = useMemo(
-    () => (puzzle ? connectedTrackKeys(displayedBoard, puzzle.start) : new Set<string>()),
+  const connectedFlow = useMemo(
+    () => (puzzle ? connectedFlowMap(displayedBoard, puzzle.start) : new Map<string, FlowCell>()),
     [displayedBoard, puzzle],
   );
+  const connectedTracks = connectedFlow;
   const displayedBestTime = isNewBest ? elapsedSeconds : bestTime;
 
   const initializePuzzle = useCallback((nextPuzzle: Puzzle, size: number) => {
     setSelectedSize(size);
     setPuzzle(nextPuzzle);
-    setBoard(cloneBoard(nextPuzzle.board));
+    setBoard(boardWithStartAligned(nextPuzzle));
     setHistory([]);
     setElapsedSeconds(0);
     setShowSolution(false);
@@ -172,7 +289,13 @@ export function TracksGame() {
   }, [elapsedSeconds, isNewBest, selectedSize]);
 
   const rotate = (row: number, col: number) => {
-    if (!puzzle || showSolution || solved || board[row][col] === 0) {
+    if (
+      !puzzle ||
+      showSolution ||
+      solved ||
+      board[row][col] === 0 ||
+      (puzzle.start[0] === row && puzzle.start[1] === col)
+    ) {
       return;
     }
 
@@ -193,7 +316,7 @@ export function TracksGame() {
     if (!puzzle) {
       return;
     }
-    setBoard(cloneBoard(puzzle.board));
+    setBoard(boardWithStartAligned(puzzle));
     setHistory([]);
     setShowSolution(false);
   };
@@ -204,7 +327,7 @@ export function TracksGame() {
     }
 
     setHistory((current) => [...current, cloneBoard(board)]);
-    setBoard((current) => applyHint(current, puzzle.solution));
+    setBoard((current) => applyFlowHint(current, puzzle));
     setUsedHint(true);
   };
 
@@ -248,16 +371,6 @@ export function TracksGame() {
               </select>
               <ChevronDown aria-hidden="true" size={16} />
             </label>
-            <button
-              className="icon-action"
-              type="button"
-              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-              aria-pressed={theme === "dark"}
-              onClick={toggleTheme}
-              title={theme === "dark" ? "Light theme" : "Dark theme"}
-            >
-              {theme === "dark" ? <Sun aria-hidden="true" size={21} /> : <Moon aria-hidden="true" size={21} />}
-            </button>
             <button
               className="icon-action"
               type="button"
@@ -317,7 +430,8 @@ export function TracksGame() {
                     const isStart = puzzle.start[0] === row && puzzle.start[1] === col;
                     const isEnd = puzzle.end[0] === row && puzzle.end[1] === col;
                     const isEndpoint = isStart || isEnd;
-                    const isConnected = connectedTracks.has(key);
+                    const flow = connectedFlow.get(key);
+                    const isConnected = Boolean(flow);
 
                     return (
                       <button
@@ -333,13 +447,19 @@ export function TracksGame() {
                           .join(" ")}
                         type="button"
                         key={key}
-                        disabled={mask === 0 || showSolution || solved}
+                        disabled={mask === 0 || isStart || showSolution || solved}
                         onClick={() => rotate(row, col)}
                         aria-label={`Row ${row + 1}, column ${col + 1}${
-                          mask === 0 ? ", empty" : isEndpoint ? ", endpoint track" : ", track piece"
+                          mask === 0
+                            ? ", empty"
+                            : isStart
+                              ? ", start track"
+                              : isEnd
+                                ? ", end track"
+                                : ", track piece"
                         }`}
                       >
-                        <TrackGlyph mask={mask} />
+                        <TrackGlyph flow={flow} mask={mask} />
                         {isEndpoint && <span className="endpoint-dot" aria-hidden="true" />}
                       </button>
                     );
