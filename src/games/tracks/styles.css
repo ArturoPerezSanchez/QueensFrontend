@@ -9,7 +9,10 @@
   --cell: #fbfeff;
   --cell-alt: #eaf8ff;
   --empty-cell: #d9f3ff;
-  --track: #17324a;
+  --track: #0d5878;
+  --track-node-center: #4fc3e8;
+  --track-node-mid: #1f83aa;
+  --track-node-rim: #083f5c;
   --flow: #00c7ff;
   --flow-bright: #62ffd5;
   --flow-glow: rgba(0, 199, 255, 0.54);
@@ -33,6 +36,9 @@
   --cell-alt: #0f2231;
   --empty-cell: #17384d;
   --track: #496775;
+  --track-node-center: #6f8c99;
+  --track-node-mid: #557382;
+  --track-node-rim: #334f5e;
   --flow: #16d8b6;
   --flow-bright: #5cf7d5;
   --flow-glow: rgba(22, 216, 182, 0.68);
@@ -367,10 +373,6 @@
 
 .game-tracks .track-tube line.is-butt {
   stroke-linecap: butt;
-}
-
-.game-tracks .track-tube circle {
-  fill: var(--track);
 }
 
 .game-tracks .track-fluid {

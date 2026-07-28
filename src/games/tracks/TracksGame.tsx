@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   AlertTriangle,
   ChevronDown,
@@ -223,6 +223,7 @@ function TrackSegments({
 }
 
 function TrackGlyph({ flow, gapDirections, mask }: { flow?: FlowCell; gapDirections?: ReadonlySet<number>; mask: number }) {
+  const tubeNodeGradientId = `track-node-gradient-${useId().replace(/:/g, "")}`;
   const fluidDirections = new Set([
     ...(flow?.inbound === null || flow?.inbound === undefined ? [] : [flow.inbound]),
     ...(flow?.outbound ?? []),
@@ -234,6 +235,13 @@ function TrackGlyph({ flow, gapDirections, mask }: { flow?: FlowCell; gapDirecti
 
   return (
     <svg className={`track-glyph ${flow ? "has-fluid" : ""}`} viewBox="0 0 100 100" aria-hidden="true">
+      <defs>
+        <radialGradient id={tubeNodeGradientId} cx="36%" cy="32%" r="72%">
+          <stop offset="0%" stopColor="var(--track-node-center)" />
+          <stop offset="56%" stopColor="var(--track-node-mid)" />
+          <stop offset="100%" stopColor="var(--track-node-rim)" />
+        </radialGradient>
+      </defs>
       <g className="track-tube">
         <TrackSegments
           buttDirections={fluidDirections}
@@ -241,7 +249,7 @@ function TrackGlyph({ flow, gapDirections, mask }: { flow?: FlowCell; gapDirecti
           gapDirections={gapDirections}
           mask={mask}
         />
-        {mask !== 0 && <circle cx="50" cy="50" r="10" />}
+        {mask !== 0 && <circle cx="50" cy="50" fill={`url(#${tubeNodeGradientId})`} r="10" />}
       </g>
       <g className="track-fluid">
         {flow ? (
@@ -587,7 +595,16 @@ export function TracksGame() {
                     const isEnd = puzzle.end[0] === row && puzzle.end[1] === col;
                     const isEndpoint = isStart || isEnd;
                     const flow = connectedFlow.get(key);
-                    const isConnected = Boolean(flow);
+                    const startFlow: FlowCell | undefined =
+                      isStart && mask !== 0
+                        ? {
+                            centerPhase: 0,
+                            inbound: null,
+                            outbound: DIRECTIONS.filter((direction) => Boolean(mask & direction)),
+                          }
+                        : undefined;
+                    const glyphFlow = startFlow ?? flow;
+                    const isConnected = Boolean(glyphFlow);
 
                     return (
                       <button
@@ -615,7 +632,7 @@ export function TracksGame() {
                                 : ", track piece"
                         }`}
                       >
-                        <TrackGlyph flow={flow} gapDirections={crossingGaps.get(key)} mask={mask} />
+                        <TrackGlyph flow={glyphFlow} gapDirections={crossingGaps.get(key)} mask={mask} />
                         {isEndpoint && <span className="endpoint-dot" aria-hidden="true" />}
                       </button>
                     );
