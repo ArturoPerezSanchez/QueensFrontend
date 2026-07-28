@@ -3,6 +3,22 @@
     {
       "source": "/api/queens",
       "destination": "https://api.arturops.com/queens"
+    },
+    {
+      "source": "/api/tango",
+      "destination": "https://api.arturops.com/tango"
+    },
+    {
+      "source": "/api/lights",
+      "destination": "https://api.arturops.com/lights"
+    },
+    {
+      "source": "/api/tracks",
+      "destination": "https://api.arturops.com/tracks"
+    },
+    {
+      "source": "/api/zip",
+      "destination": "https://api.arturops.com/zip"
     }
   ]
 }

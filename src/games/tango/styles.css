@@ -1,0 +1,911 @@
+/* Scoped styles for tango. Generated from the original game stylesheet. */
+.game-tango {
+  color-scheme: light;
+  --ink: #1f2d3a;
+  --muted: #66717d;
+  --line: rgba(31, 45, 58, 0.13);
+  --surface: rgba(255, 255, 255, 0.72);
+  --surface-solid: #fffdfa;
+  --page: #f4f1eb;
+  --sun: #e99a24;
+  --sun-soft: #ffd36f;
+  --moon: #3478c9;
+  --moon-soft: #7eb3eb;
+  --teal: #147d68;
+  --danger: #c73d55;
+  --focus: #1f2d3a;
+}
+
+[data-theme="dark"] .game-tango {
+  color-scheme: dark;
+  --ink: #f4efe6;
+  --muted: #b9b0a4;
+  --line: rgba(244, 239, 230, 0.16);
+  --surface: rgba(33, 31, 28, 0.78);
+  --surface-solid: #27231f;
+  --page: #171615;
+  --sun: #ffb13b;
+  --sun-soft: #ffd978;
+  --moon: #76aee9;
+  --moon-soft: #9bc8f5;
+  --teal: #46c5a3;
+  --danger: #ff7b8d;
+  --focus: #ffd36f;
+}
+
+[data-theme="dark"] .game-tango {
+  background:
+    linear-gradient(180deg, rgba(255, 211, 111, 0.08), rgba(255, 255, 255, 0) 260px),
+    radial-gradient(circle at 82% 8%, rgba(118, 174, 233, 0.16), transparent 30%),
+    var(--page);
+}
+
+[data-theme="dark"] .game-tango .game-surface, [data-theme="dark"] .game-tango .stats-bar, [data-theme="dark"] .game-tango .state-panel, [data-theme="dark"] .game-tango .rules-panel, [data-theme="dark"] .game-tango .board-popup, [data-theme="dark"] .game-tango .secondary-action, [data-theme="dark"] .game-tango .size-control select, [data-theme="dark"] .game-tango .symbol-legend span {
+  background-color: rgba(39, 35, 31, 0.78);
+}
+
+[data-theme="dark"] .game-tango .cell {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 90%),
+    #2b2925;
+}
+
+[data-theme="dark"] .game-tango .cell:nth-child(even) {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 90%),
+    #24231f;
+}
+
+[data-theme="dark"] .game-tango .cell.is-given {
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0 3px, transparent 3px 9px),
+    #343029;
+}
+
+[data-theme="dark"] .game-tango .relation-clue, [data-theme="dark"] .game-tango .icon-action:hover {
+  color: var(--ink);
+  background: rgba(39, 35, 31, 0.94);
+}
+
+.game-tango * {
+  box-sizing: border-box;
+}
+
+.game-tango {
+  min-width: 320px;
+  background: var(--page);
+}
+
+.game-tango {
+  min-height: 100vh;
+  margin: 0;
+  color: var(--ink);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0) 260px),
+    var(--page);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+.game-tango button, .game-tango select {
+  color: inherit;
+  font: inherit;
+}
+
+.game-tango button {
+  border: 0;
+}
+
+.game-tango .app-shell {
+  width: 100%;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.game-tango .game-surface {
+  display: grid;
+  gap: 16px;
+  width: min(100%, 760px);
+  margin: 0 auto;
+  padding: 20px;
+  border: 1px solid rgba(31, 45, 58, 0.1);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 24px 70px rgba(31, 45, 58, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.game-tango .top-bar, .game-tango .brand-lockup, .game-tango .top-actions, .game-tango .action-row, .game-tango .symbol-legend, .game-tango .rules-heading {
+  display: flex;
+  align-items: center;
+}
+
+.game-tango .top-bar {
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.game-tango .brand-lockup {
+  min-width: 0;
+  gap: 11px;
+}
+
+.game-tango .brand-mark {
+  display: block;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+}
+
+.game-tango .asset-mark {
+  background: rgba(255, 255, 255, 0.86);
+  object-fit: contain;
+  box-shadow: 0 8px 18px rgba(35, 51, 61, 0.14);
+}
+
+.game-tango h1, .game-tango h2, .game-tango p {
+  margin: 0;
+}
+
+.game-tango h1 {
+  font-size: 1.75rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.game-tango .top-actions {
+  gap: 6px;
+}
+
+.game-tango .size-control {
+  position: relative;
+  display: grid;
+  align-items: center;
+}
+
+.game-tango .size-control select {
+  min-width: 96px;
+  min-height: 38px;
+  padding: 0 34px 0 14px;
+  appearance: none;
+  border: 1px solid rgba(31, 45, 58, 0.12);
+  border-radius: 999px;
+  outline: 0;
+  background: rgba(255, 255, 255, 0.54);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.game-tango .size-control svg {
+  position: absolute;
+  right: 11px;
+  pointer-events: none;
+}
+
+.game-tango .size-control select:focus-visible, .game-tango .icon-action:focus-visible, .game-tango .secondary-action:focus-visible, .game-tango .primary-action:focus-visible, .game-tango .win-action:focus-visible, .game-tango .text-action:focus-visible, .game-tango .popup-close:focus-visible {
+  outline: 3px solid rgba(52, 120, 201, 0.42);
+  outline-offset: 2px;
+}
+
+.game-tango .icon-action {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 999px;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  transition: color 120ms ease, background 120ms ease, transform 120ms ease;
+}
+
+.game-tango .icon-action:hover {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.62);
+  transform: translateY(-1px);
+}
+
+.game-tango .stats-bar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(10px);
+}
+
+.game-tango .stat {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 11px 14px;
+  text-align: center;
+}
+
+.game-tango .stat + .stat {
+  border-left: 1px solid rgba(102, 113, 125, 0.16);
+}
+
+.game-tango .stat span {
+  color: #7c858e;
+  font-size: 0.66rem;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.game-tango .stat strong {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 1.22rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.game-tango .board-zone {
+  position: relative;
+  display: grid;
+  min-height: min(74vw, 660px);
+  place-items: center;
+}
+
+.game-tango .board {
+  --board-size: 6;
+  display: grid;
+  grid-template-columns: repeat(var(--board-size), minmax(0, 1fr));
+  width: min(100%, 650px, calc(100vh - 270px));
+  min-width: 260px;
+  overflow: hidden;
+  border: 2px solid rgba(31, 45, 58, 0.8);
+  border-radius: 8px;
+  aspect-ratio: 1;
+  background: var(--ink);
+  box-shadow: 0 18px 46px rgba(31, 45, 58, 0.18);
+  user-select: none;
+}
+
+.game-tango .cell {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  padding: 0;
+  place-items: center;
+  border-right: 1px solid rgba(31, 45, 58, 0.16);
+  border-bottom: 1px solid rgba(31, 45, 58, 0.16);
+  aspect-ratio: 1;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0) 90%),
+    #fffdfa;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: filter 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+}
+
+.game-tango .cell:nth-child(even) {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0) 90%),
+    #f4f1ec;
+}
+
+.game-tango .cell.is-given {
+  background:
+    repeating-linear-gradient(135deg, rgba(31, 45, 58, 0.025) 0 3px, transparent 3px 9px),
+    #e9e6e0;
+  cursor: default;
+}
+
+.game-tango .cell:hover:not(:disabled), .game-tango .cell:focus-visible:not(:disabled) {
+  z-index: 3;
+  filter: brightness(1.025);
+  outline: 3px solid rgba(52, 120, 201, 0.55);
+  outline-offset: -3px;
+}
+
+.game-tango .cell:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.game-tango .cell:disabled {
+  opacity: 1;
+}
+
+.game-tango .cell.is-conflict::before {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  content: "";
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(199, 61, 85, 0.62) 0 4px,
+    rgba(199, 61, 85, 0.18) 4px 9px,
+    transparent 9px 15px
+  );
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.game-tango .cell.is-solution:not(.is-given) .symbol-icon {
+  opacity: 0.48;
+  filter: grayscale(0.2);
+}
+
+.game-tango .symbol-icon {
+  z-index: 2;
+  width: 58%;
+  height: 58%;
+  filter: drop-shadow(0 3px 2px rgba(31, 45, 58, 0.15));
+}
+
+.game-tango .sun-icon {
+  color: var(--sun);
+  fill: var(--sun-soft);
+}
+
+.game-tango .moon-icon {
+  color: var(--moon);
+}
+
+.game-tango .is-given .symbol-icon {
+  filter: drop-shadow(0 2px 1px rgba(31, 45, 58, 0.12));
+}
+
+.game-tango .relation-clue {
+  position: absolute;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  width: clamp(18px, 4vw, 28px);
+  height: clamp(18px, 4vw, 28px);
+  border: 1px solid rgba(31, 45, 58, 0.1);
+  border-radius: 999px;
+  color: #5e503b;
+  background: rgba(255, 253, 250, 0.96);
+  box-shadow: 0 2px 5px rgba(31, 45, 58, 0.08);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.94rem;
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.game-tango .relation-clue.horizontal {
+  top: 50%;
+  right: 0;
+  transform: translate(50%, -50%);
+}
+
+.game-tango .relation-clue.vertical {
+  bottom: 0;
+  left: 50%;
+  transform: translate(-50%, 50%);
+}
+
+.game-tango .progress-track {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(31, 45, 58, 0.09);
+}
+
+.game-tango .progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--moon), var(--teal), var(--sun));
+  transition: width 180ms ease;
+}
+
+.game-tango .action-row {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 9px;
+}
+
+.game-tango .primary-action, .game-tango .secondary-action, .game-tango .win-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 43px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-weight: 850;
+  cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease, opacity 120ms ease;
+}
+
+.game-tango .primary-action, .game-tango .win-action {
+  color: #fff;
+  background: var(--ink);
+  box-shadow: 0 10px 22px rgba(31, 45, 58, 0.18);
+}
+
+.game-tango .secondary-action {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.game-tango .secondary-action[aria-pressed="true"] {
+  color: #fff;
+  border-color: var(--moon);
+  background: var(--moon);
+}
+
+.game-tango .primary-action:hover, .game-tango .secondary-action:hover, .game-tango .win-action:hover {
+  transform: translateY(-1px);
+}
+
+.game-tango .primary-action:disabled, .game-tango .secondary-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.44;
+  transform: none;
+}
+
+.game-tango .state-panel {
+  display: grid;
+  width: min(100%, 430px);
+  min-height: 230px;
+  padding: 24px;
+  place-items: center;
+  gap: 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--muted);
+  text-align: center;
+}
+
+.game-tango .state-panel strong {
+  color: var(--ink);
+}
+
+.game-tango .state-panel p {
+  line-height: 1.45;
+}
+
+.game-tango .error-state > svg {
+  color: var(--danger);
+}
+
+.game-tango .spin {
+  animation: spin 850ms linear infinite;
+}
+
+.game-tango .conflict-trigger {
+  position: absolute;
+  z-index: 7;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid rgba(199, 61, 85, 0.3);
+  border-radius: 999px;
+  color: var(--danger);
+  background: rgba(255, 253, 250, 0.88);
+  box-shadow: 0 10px 26px rgba(31, 45, 58, 0.16);
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+}
+
+.game-tango .board-dismiss-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: transparent;
+  cursor: default;
+}
+
+.game-tango .board-popup {
+  position: absolute;
+  z-index: 6;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  width: min(86%, 390px);
+  padding: 17px;
+  gap: 14px;
+  border: 1px solid rgba(31, 45, 58, 0.16);
+  border-radius: 8px;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 253, 250, 0.94);
+  box-shadow:
+    0 24px 64px rgba(31, 45, 58, 0.29),
+    0 0 0 999px rgba(31, 45, 58, 0.17);
+  backdrop-filter: blur(12px);
+  animation: popup-enter 340ms cubic-bezier(0.2, 0.9, 0.2, 1.1) both;
+}
+
+.game-tango .board-popup strong {
+  display: block;
+  font-size: 1.1rem;
+}
+
+.game-tango .board-popup p {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.91rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.game-tango .conflict-popup > svg {
+  color: var(--danger);
+}
+
+.game-tango .popup-close {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(31, 45, 58, 0.06);
+  cursor: pointer;
+}
+
+.game-tango .conflict-list {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.game-tango .conflict-list span {
+  padding: 6px 9px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--danger);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.game-tango .text-action {
+  grid-column: 1 / -1;
+  justify-self: start;
+  padding: 0;
+  color: #8f2034;
+  background: transparent;
+  font-weight: 850;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.game-tango .win-popup {
+  overflow: hidden;
+  border-color: rgba(20, 125, 104, 0.28);
+  background:
+    linear-gradient(135deg, rgba(255, 211, 111, 0.25), rgba(126, 179, 235, 0.18)),
+    rgba(255, 253, 250, 0.95);
+}
+
+.game-tango .win-popup > svg {
+  color: var(--sun);
+}
+
+.game-tango .record-badge {
+  display: inline-flex;
+  grid-column: 1 / -1;
+  justify-self: start;
+  align-items: center;
+  gap: 6px;
+  min-height: 31px;
+  padding: 0 10px;
+  border-radius: 999px;
+  color: #423015;
+  background: var(--sun-soft);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.game-tango .win-action {
+  grid-column: 1 / -1;
+}
+
+.game-tango .confetti-field {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.game-tango .confetti-field span {
+  position: absolute;
+  top: -14px;
+  left: var(--x);
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  opacity: 0;
+  background: var(--confetti-color);
+  animation: confetti-fall 1200ms ease-out forwards;
+  animation-delay: var(--delay);
+}
+
+.game-tango .rules-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: rgba(31, 45, 58, 0.2);
+  cursor: default;
+  backdrop-filter: blur(2px);
+}
+
+.game-tango .rules-panel {
+  position: fixed;
+  z-index: 21;
+  top: 0;
+  right: 0;
+  display: grid;
+  align-content: start;
+  width: min(390px, 92vw);
+  height: 100dvh;
+  overflow-y: auto;
+  padding: 22px;
+  gap: 18px;
+  border-left: 1px solid var(--line);
+  background: rgba(255, 253, 250, 0.96);
+  box-shadow: -24px 0 70px rgba(31, 45, 58, 0.17);
+  backdrop-filter: blur(16px);
+  animation: rules-enter 210ms ease both;
+}
+
+.game-tango .rules-heading {
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.game-tango .rules-heading span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.game-tango .rules-heading h2 {
+  margin-top: 3px;
+  font-size: 1.45rem;
+  line-height: 1.1;
+}
+
+.game-tango .symbol-legend {
+  gap: 10px;
+}
+
+.game-tango .symbol-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-weight: 800;
+}
+
+.game-tango .symbol-legend .symbol-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.game-tango .legend-emoji {
+  display: block;
+  width: 25px;
+  height: 25px;
+  object-fit: contain;
+}
+
+.game-tango .rules-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: rules;
+}
+
+.game-tango .rules-list li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  padding: 14px 0;
+  gap: 3px 9px;
+  border-top: 1px solid var(--line);
+  counter-increment: rules;
+}
+
+.game-tango .rules-list li::before {
+  grid-row: 1 / span 2;
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--ink);
+  content: counter(rules);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.game-tango .rules-list strong {
+  font-size: 0.96rem;
+}
+
+.game-tango .rules-list span {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.43;
+}
+
+.game-tango .rules-note {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 13px;
+  gap: 9px;
+  border-left: 3px solid var(--sun);
+  background: rgba(255, 211, 111, 0.16);
+  color: #55472f;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.game-tango .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes popup-enter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 10px)) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes confetti-fall {
+  0% {
+    opacity: 0;
+    transform: translateY(-12px) rotate(0deg);
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(160px) rotate(210deg);
+  }
+}
+
+@keyframes rules-enter {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-tango *, .game-tango *::before, .game-tango *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+@media (max-width: 680px) {
+  .game-tango .app-shell {
+    padding: 12px;
+  }
+
+  .game-tango .game-surface {
+    gap: 13px;
+    padding: 13px;
+  }
+
+  .game-tango .brand-mark {
+    width: 38px;
+    height: 38px;
+  }
+
+  .game-tango h1 {
+    font-size: 1.5rem;
+  }
+
+  .game-tango .stats-bar {
+    border-radius: 8px;
+  }
+
+  .game-tango .stat {
+    padding: 10px 7px;
+  }
+
+  .game-tango .stat strong {
+    font-size: 1rem;
+  }
+
+  .game-tango .board-zone {
+    min-height: auto;
+  }
+
+  .game-tango .board {
+    width: min(100%, calc(100vw - 26px));
+  }
+
+  .game-tango .action-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .game-tango .primary-action, .game-tango .secondary-action {
+    width: 100%;
+    padding: 0 9px;
+  }
+
+  .game-tango .primary-action:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 390px) {
+  .game-tango .brand-lockup {
+    gap: 8px;
+  }
+
+  .game-tango .brand-mark {
+    width: 34px;
+    height: 34px;
+  }
+
+  .game-tango h1 {
+    font-size: 1.35rem;
+  }
+
+  .game-tango .size-control select {
+    min-width: 84px;
+    min-height: 34px;
+    padding-left: 11px;
+  }
+
+  .game-tango .icon-action {
+    width: 34px;
+    height: 34px;
+  }
+
+  .game-tango .action-row {
+    grid-template-columns: 1fr;
+  }
+
+  .game-tango .primary-action:last-child {
+    grid-column: auto;
+  }
+}
