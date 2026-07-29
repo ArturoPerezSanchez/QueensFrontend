@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Mine Islands logo">
+  <rect width="128" height="128" rx="22" fill="#f7f8fa"/>
+  <rect x="18" y="18" width="92" height="92" rx="12" fill="#232b35"/>
+  <g stroke="#c7cdd5" stroke-width="2">
+    <path d="M49 19v90M79 19v90M19 49h90M19 79h90"/>
+  </g>
+  <path d="M20 20h28v28H20zM50 20h28v28H50zM80 20h28v28H80zM20 50h28v28H20z" fill="#dce1e7"/>
+  <path d="M50 50h28v28H50zM80 50h28v28H80zM20 80h28v28H20zM50 80h28v28H50zM80 80h28v28H80z" fill="#f7f8fa"/>
+  <text x="64" y="72" text-anchor="middle" fill="#2e6fce" font-family="ui-monospace, monospace" font-size="27" font-weight="800">2</text>
+  <path d="M94 87v14M87 94h14M89 89l10 10M99 89l-10 10" fill="none" stroke="#e05d5d" stroke-width="4" stroke-linecap="round"/>
+</svg>

@@ -17,7 +17,6 @@ import {
   Loader2,
   Medal,
   PartyPopper,
-  Palette,
   RefreshCcw,
   RotateCcw,
   ShieldX,
@@ -25,6 +24,7 @@ import {
   X as XIcon,
 } from "lucide-react";
 import { fetchPuzzle } from "./api";
+import { useQueensPatternsSetting } from "../../useConfig";
 import { BOARD_SIZES, evaluateGame, formatTime, getForbiddenMarks, positionKey, toPositionSet } from "./game";
 import type { Puzzle, ViolationKind } from "./types";
 
@@ -32,42 +32,53 @@ const REGION_STYLES = [
   {
     color: "#f0e442",
     pattern: "linear-gradient(145deg, rgba(255,255,255,.36), rgba(255,255,255,0) 55%)",
+    darkPattern: "linear-gradient(145deg, rgba(255,255,255,.07), rgba(255,255,255,0) 55%)",
   },
   {
     color: "#56b4e9",
     pattern: "repeating-linear-gradient(45deg, rgba(255,255,255,.28) 0 4px, transparent 4px 12px)",
+    darkPattern: "repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 4px, transparent 4px 12px)",
   },
   {
     color: "#009e73",
     pattern: "repeating-linear-gradient(135deg, rgba(255,255,255,.3) 0 3px, transparent 3px 11px)",
+    darkPattern: "repeating-linear-gradient(135deg, rgba(255,255,255,.06) 0 3px, transparent 3px 11px)",
   },
   {
     color: "#e69f00",
     pattern: "radial-gradient(circle at 30% 30%, rgba(255,255,255,.34) 0 2px, transparent 2px 11px)",
+    darkPattern: "radial-gradient(circle at 30% 30%, rgba(255,255,255,.07) 0 2px, transparent 2px 11px)",
   },
   {
     color: "#0072b2",
     pattern: "repeating-linear-gradient(0deg, rgba(255,255,255,.24) 0 3px, transparent 3px 10px)",
+    darkPattern: "repeating-linear-gradient(0deg, rgba(255,255,255,.055) 0 3px, transparent 3px 10px)",
   },
   {
     color: "#cc79a7",
     pattern: "repeating-linear-gradient(90deg, rgba(255,255,255,.24) 0 3px, transparent 3px 10px)",
+    darkPattern: "repeating-linear-gradient(90deg, rgba(255,255,255,.055) 0 3px, transparent 3px 10px)",
   },
   {
     color: "#d55e00",
     pattern: "radial-gradient(circle at 70% 34%, rgba(255,255,255,.28) 0 2px, transparent 2px 9px)",
+    darkPattern: "radial-gradient(circle at 70% 34%, rgba(255,255,255,.06) 0 2px, transparent 2px 9px)",
   },
   {
     color: "#8da0cb",
     pattern: "repeating-linear-gradient(45deg, rgba(31,41,51,.14) 0 2px, transparent 2px 9px)",
+    darkPattern: "repeating-linear-gradient(45deg, rgba(212,212,212,.045) 0 2px, transparent 2px 9px)",
   },
   {
     color: "#66c2a5",
     pattern: "repeating-linear-gradient(135deg, rgba(31,41,51,.12) 0 2px, transparent 2px 8px)",
+    darkPattern: "repeating-linear-gradient(135deg, rgba(212,212,212,.04) 0 2px, transparent 2px 8px)",
   },
   {
     color: "#b3b3b3",
     pattern: "linear-gradient(45deg, rgba(255,255,255,.26) 25%, transparent 25% 50%, rgba(31,41,51,.1) 50% 75%, transparent 75%)",
+    darkPattern:
+      "linear-gradient(45deg, rgba(255,255,255,.055) 25%, transparent 25% 50%, rgba(212,212,212,.035) 50% 75%, transparent 75%)",
   },
 ];
 
@@ -81,10 +92,6 @@ function getStoredBestTimes(): BestTimes {
   } catch {
     return {};
   }
-}
-
-function getStoredPatternPreference(): boolean {
-  return localStorage.getItem("queens-show-patterns") === "true";
 }
 
 function getStoredAutoMarkPreference(): boolean {
@@ -113,7 +120,7 @@ export function QueensGame() {
   const [error, setError] = useState<string | null>(null);
   const [showSolution, setShowSolution] = useState(false);
   const [solutionRevealed, setSolutionRevealed] = useState(false);
-  const [showPatterns, setShowPatterns] = useState(() => getStoredPatternPreference());
+  const [showPatterns] = useQueensPatternsSetting();
   const [autoMarkForbidden, setAutoMarkForbidden] = useState(() => getStoredAutoMarkPreference());
   const [showRules, setShowRules] = useState(false);
   const [showConflictPanel, setShowConflictPanel] = useState(false);
@@ -210,10 +217,6 @@ export function QueensGame() {
       return next;
     });
   }, [elapsedSeconds, gameStatus?.isSolved, size, solutionRevealed]);
-
-  useEffect(() => {
-    localStorage.setItem("queens-show-patterns", String(showPatterns));
-  }, [showPatterns]);
 
   useEffect(() => {
     localStorage.setItem("queens-auto-mark", String(autoMarkForbidden));
@@ -555,6 +558,7 @@ export function QueensGame() {
                         {
                           "--region-color": regionStyle.color,
                           "--region-pattern": regionStyle.pattern,
+                          "--region-pattern-dark": regionStyle.darkPattern,
                         } as CSSProperties
                       }
                       type="button"
@@ -675,15 +679,6 @@ export function QueensGame() {
         </div>
 
         <div className="action-row">
-          <button
-            className="secondary-action"
-            type="button"
-            aria-pressed={showPatterns}
-            onClick={() => setShowPatterns((current) => !current)}
-          >
-            <Palette size={18} />
-            {showPatterns ? "Plain" : "Patterns"}
-          </button>
           <button className="secondary-action" type="button" onClick={retryPuzzle} disabled={!puzzle}>
             <RotateCcw size={18} />
             Retry

@@ -1,6 +1,6 @@
-# Logic Games Frontend
+# MindLab Frontend
 
-A single Vite/React frontend for the full puzzle suite: Queens, Tango, Lights, Tracks, and Zip.
+A single Vite/React frontend for MindLab's logic puzzle suite: Queens, Tango, Lights, Tracks, Zip, Mine Islands, and MiniChess.
 
 Queens keeps its existing logo and deployment shape, while the other games live as isolated modules under `src/games/*`.
 
@@ -14,6 +14,8 @@ The app uses hash routes so the static Vite deployment does not need extra SPA f
 #/lights
 #/tracks
 #/zip
+#/mine-islands
+#/mini-chess
 ```
 
 ## API Integration
@@ -26,6 +28,8 @@ The frontend calls same-origin API paths:
 /api/lights
 /api/tracks
 /api/zip
+/api/mine-islands
+/api/mini-chess
 ```
 
 In local development, Vite proxies those paths to `VITE_GAMES_API_ORIGIN`.
@@ -79,6 +83,15 @@ src/
     lights/
     tracks/
     zip/
+    mine-islands/
+    mini-chess/
 ```
 
 Each game module owns its component, fetch client, pure game helpers, types, and scoped stylesheet.
+
+MiniChess mixes mate-in-1, mate-in-2, and mate-in-3 positions across standard
+8x8 and Gardner 5x5 boards. It supports both click-to-move and desktop
+drag-and-drop controls. The API supplies validated per-ply positions and legal
+destinations so both board geometries use the same interaction model. Piece-art
+and puzzle-source details are documented in
+`public/games/mini-chess/ATTRIBUTION.md`.

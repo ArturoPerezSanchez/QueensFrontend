@@ -384,7 +384,7 @@
   background: rgba(255, 255, 255, 0.96);
   box-shadow:
     0 4px 10px rgba(35, 51, 61, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
   font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: clamp(0.82rem, calc(6.2rem / var(--board-size)), 1.34rem);
   font-weight: 950;

@@ -19,6 +19,14 @@
     {
       "source": "/api/zip",
       "destination": "https://api.arturops.com/zip"
+    },
+    {
+      "source": "/api/mine-islands",
+      "destination": "https://api.arturops.com/mine-islands"
+    },
+    {
+      "source": "/api/mini-chess",
+      "destination": "https://api.arturops.com/mini-chess"
     }
   ]
 }

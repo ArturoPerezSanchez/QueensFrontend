@@ -37,6 +37,16 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (path: string) => path.replace(/^\/api/, ""),
         },
+        "/api/mine-islands": {
+          target: gamesApiOrigin,
+          changeOrigin: true,
+          rewrite: (path: string) => path.replace(/^\/api/, ""),
+        },
+        "/api/mini-chess": {
+          target: gamesApiOrigin,
+          changeOrigin: true,
+          rewrite: (path: string) => path.replace(/^\/api/, ""),
+        },
       },
     },
   };
