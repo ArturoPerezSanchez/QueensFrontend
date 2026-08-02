@@ -1,6 +1,7 @@
+import { apiPath } from "@/shared/api";
 import type { Puzzle, QueensResponse } from "./types";
 
-const API_PATH = "/api/queens";
+const API_PATH = apiPath("/queens");
 
 function assertBoard(board: number[][], size: number): void {
   if (board.length !== size || board.some((row) => row.length !== size)) {

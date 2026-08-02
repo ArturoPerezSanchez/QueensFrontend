@@ -7,10 +7,10 @@
   --surface: rgba(255, 255, 255, 0.72);
   --surface-solid: #fffdfa;
   --page: #f4f1eb;
-  --sun: #e99a24;
-  --sun-soft: #ffd36f;
-  --moon: #3478c9;
-  --moon-soft: #7eb3eb;
+  --symbol-1: #e99a24;
+  --symbol-1-soft: #ffd36f;
+  --symbol-0: #3478c9;
+  --symbol-0-soft: #7eb3eb;
   --teal: #147d68;
   --danger: #c73d55;
   --focus: #1f2d3a;
@@ -24,10 +24,10 @@
   --surface: rgba(33, 31, 28, 0.78);
   --surface-solid: #27231f;
   --page: #171615;
-  --sun: #ffb13b;
-  --sun-soft: #ffd978;
-  --moon: #76aee9;
-  --moon-soft: #9bc8f5;
+  --symbol-1: #ffb13b;
+  --symbol-1-soft: #ffd978;
+  --symbol-0: #76aee9;
+  --symbol-0-soft: #9bc8f5;
   --teal: #46c5a3;
   --danger: #ff7b8d;
   --focus: #ffd36f;
@@ -45,21 +45,11 @@
 }
 
 [data-theme="dark"] .game-tango .cell {
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0) 78%),
-    #25231f;
-}
-
-[data-theme="dark"] .game-tango .cell:nth-child(even) {
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0) 78%),
-    #23211e;
+  background: var(--board-cell, #2d2d30);
 }
 
 [data-theme="dark"] .game-tango .cell.is-given {
-  background:
-    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.035) 0 3px, transparent 3px 9px),
-    #2a2722;
+  background: var(--board-given, #3c3c3f);
 }
 
 [data-theme="dark"] .game-tango .relation-clue, [data-theme="dark"] .game-tango .icon-action:hover {
@@ -274,24 +264,14 @@
   border-right: 1px solid rgba(31, 45, 58, 0.16);
   border-bottom: 1px solid rgba(31, 45, 58, 0.16);
   aspect-ratio: 1;
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0) 90%),
-    #fffdfa;
+  background: var(--board-cell, #f8f9fa);
   cursor: pointer;
   touch-action: manipulation;
   transition: filter 120ms ease, transform 120ms ease, box-shadow 120ms ease;
 }
 
-.game-tango .cell:nth-child(even) {
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0) 90%),
-    #f4f1ec;
-}
-
 .game-tango .cell.is-given {
-  background:
-    repeating-linear-gradient(135deg, rgba(31, 45, 58, 0.025) 0 3px, transparent 3px 9px),
-    #e9e6e0;
+  background: var(--board-given, #e1e4e7);
   cursor: default;
 }
 
@@ -331,19 +311,14 @@
 }
 
 .game-tango .symbol-icon {
+  display: block;
   z-index: 2;
   width: 58%;
   height: 58%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
   filter: drop-shadow(0 3px 2px rgba(31, 45, 58, 0.15));
-}
-
-.game-tango .sun-icon {
-  color: var(--sun);
-  fill: var(--sun-soft);
-}
-
-.game-tango .moon-icon {
-  color: var(--moon);
 }
 
 .game-tango .is-given .symbol-icon {
@@ -392,7 +367,7 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--moon), var(--teal), var(--sun));
+  background: linear-gradient(90deg, var(--symbol-0), var(--teal), var(--symbol-1));
   transition: width 180ms ease;
 }
 
@@ -428,8 +403,8 @@
 
 .game-tango .secondary-action[aria-pressed="true"] {
   color: #fff;
-  border-color: var(--moon);
-  background: var(--moon);
+  border-color: var(--symbol-0);
+  background: var(--symbol-0);
 }
 
 .game-tango .primary-action:hover, .game-tango .secondary-action:hover, .game-tango .win-action:hover {
@@ -589,7 +564,7 @@
 }
 
 .game-tango .win-popup > svg {
-  color: var(--sun);
+  color: var(--symbol-1);
 }
 
 .game-tango .record-badge {
@@ -602,7 +577,7 @@
   padding: 0 10px;
   border-radius: 999px;
   color: #423015;
-  background: var(--sun-soft);
+  background: var(--symbol-1-soft);
   font-size: 0.8rem;
   font-weight: 900;
 }
@@ -752,7 +727,7 @@
   grid-template-columns: auto minmax(0, 1fr);
   padding: 13px;
   gap: 9px;
-  border-left: 3px solid var(--sun);
+  border-left: 3px solid var(--symbol-1);
   background: rgba(255, 211, 111, 0.16);
   color: #55472f;
   font-size: 0.86rem;

@@ -51,7 +51,8 @@ export function formatTime(totalSeconds: number): string {
 
 export function rotateMask(mask: number, turns = 1): number {
   let next = mask;
-  for (let index = 0; index < turns % 8; index += 1) {
+  const normalizedTurns = ((turns % 8) + 8) % 8;
+  for (let index = 0; index < normalizedTurns; index += 1) {
     let rotated = 0;
     if (next & NORTH) {
       rotated |= NORTH_EAST;
@@ -82,9 +83,9 @@ export function rotateMask(mask: number, turns = 1): number {
   return next;
 }
 
-export function rotateCell(board: Board, row: number, col: number): Board {
+export function rotateCell(board: Board, row: number, col: number, turns = 1): Board {
   const next = cloneBoard(board);
-  next[row][col] = rotateMask(next[row][col]);
+  next[row][col] = rotateMask(next[row][col], turns);
   return next;
 }
 

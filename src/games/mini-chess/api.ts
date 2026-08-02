@@ -1,6 +1,7 @@
-import type { MiniChessResponse, Puzzle, SolutionMove } from "./types";
+import { apiPath } from "@/shared/api";
+import type { BoardSize, MiniChessResponse, Puzzle, SolutionMove } from "./types";
 
-const API_PATH = "/api/mini-chess";
+const API_PATH = apiPath("/mini-chess");
 
 function assertSolution(
   mateIn: number,
@@ -16,8 +17,9 @@ function assertSolution(
   }
 }
 
-export async function fetchPuzzle(signal?: AbortSignal): Promise<Puzzle> {
+export async function fetchPuzzle(boardSize: BoardSize, signal?: AbortSignal): Promise<Puzzle> {
   const params = new URLSearchParams({
+    board_size: String(boardSize),
     solution: "true",
   });
   const response = await fetch(`${API_PATH}?${params}`, { signal });

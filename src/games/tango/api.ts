@@ -1,3 +1,4 @@
+import { apiPath } from "@/shared/api";
 import type { CellValue, Constraint, Puzzle, SymbolValue, TangoResponse } from "./types";
 
 function isCell(value: unknown): value is CellValue {
@@ -57,7 +58,7 @@ export async function fetchPuzzle(size: number, signal?: AbortSignal): Promise<P
     board_size: String(size),
     solution: "true",
   });
-  const response = await fetch(`/api/tango?${params}`, { signal });
+  const response = await fetch(`${apiPath("/tango")}?${params}`, { signal });
 
   if (!response.ok) {
     throw new Error(`Puzzle generation failed with status ${response.status}.`);

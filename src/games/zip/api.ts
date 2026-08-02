@@ -1,3 +1,4 @@
+import { apiPath } from "@/shared/api";
 import {
   areAdjacent,
   createWallSet,
@@ -101,7 +102,7 @@ export async function fetchPuzzle(size: number, signal?: AbortSignal): Promise<P
     board_size: String(size),
     solution: "true",
   });
-  const response = await fetch(`/api/zip?${params}`, { signal });
+  const response = await fetch(`${apiPath("/zip")}?${params}`, { signal });
 
   if (!response.ok) {
     throw new Error(`Puzzle generation failed with status ${response.status}.`);
@@ -125,4 +126,3 @@ export async function fetchPuzzle(size: number, signal?: AbortSignal): Promise<P
     solution: payload.solution,
   };
 }
-

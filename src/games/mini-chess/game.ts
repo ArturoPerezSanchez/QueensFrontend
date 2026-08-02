@@ -72,10 +72,6 @@ export function isExpectedMove(from: SquareId, to: SquareId, expected: SolutionM
   return Boolean(expected && expected.from === from && expected.to === to);
 }
 
-export function pieceAsset(piece: BoardPiece): string {
-  return `/games/mini-chess/pieces/${piece.color}${piece.type}.svg`;
-}
-
 export function pieceLabel(piece: BoardPiece): string {
   return `${piece.color === "w" ? "White" : "Black"} ${PIECE_NAMES[piece.type]}`;
 }

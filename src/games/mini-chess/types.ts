@@ -1,4 +1,5 @@
 export type SideName = "white" | "black";
+export type BoardSize = 5 | 8;
 export type PieceColor = "w" | "b";
 export type PieceSymbol = "p" | "n" | "b" | "r" | "q" | "k";
 export type SquareId = string;

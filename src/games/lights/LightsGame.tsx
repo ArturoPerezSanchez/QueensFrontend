@@ -16,6 +16,9 @@ import {
   Undo2,
   X,
 } from "lucide-react";
+import { useGameResultReporter } from "@/features/auth/AuthProvider";
+import { LeaderboardLink } from "@/features/leaderboard/LeaderboardLink";
+import { useGameSkin } from "@/features/skins/useSkins";
 import { fetchPuzzle } from "./api";
 import {
   BOARD_SIZES,
@@ -27,6 +30,7 @@ import {
   pressCell,
   solveBoard,
 } from "./game";
+import { LightsCanvas } from "./LightsCanvas";
 import type { Board, Position, Puzzle } from "./types";
 
 const CONFETTI_COLORS = ["#f3b13e", "#278f83", "#3b79a7", "#d55466", "#263642"];
@@ -36,6 +40,7 @@ function solutionSet(solution: Position[] | null): Set<string> {
 }
 
 export function LightsGame() {
+  const skin = useGameSkin("lights");
   const [selectedSize, setSelectedSize] = useState(5);
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [board, setBoard] = useState<Board>([]);
@@ -62,6 +67,16 @@ export function LightsGame() {
     [currentSolution, showSolution],
   );
   const displayedBestTime = isNewBest ? elapsedSeconds : bestTime;
+
+  useGameResultReporter({
+    runKey: puzzle,
+    completed: solved,
+    game: "lights",
+    difficulty: `${selectedSize}x${selectedSize}`,
+    won: true,
+    time_seconds: elapsedSeconds,
+    assisted,
+  });
 
   const initializePuzzle = useCallback((nextPuzzle: Puzzle, size: number) => {
     setSelectedSize(size);
@@ -228,7 +243,7 @@ export function LightsGame() {
           </div>
         </header>
 
-        <div className="stats-bar" aria-label="Game progress">
+        <div className="stats-bar sr-only" aria-label="Game progress">
           <div className="stat">
             <span>{solutionRevealed ? "Timer paused" : "Timer"}</span>
             <strong>{formatTime(elapsedSeconds)}</strong>
@@ -263,39 +278,26 @@ export function LightsGame() {
             </div>
           ) : (
             <>
-              <div
-                className={`board ${showSolution ? "is-showing-solution" : ""}`}
-                style={{ "--board-size": puzzle.size } as CSSProperties}
-                aria-label={`${puzzle.size} by ${puzzle.size} Lights board`}
-              >
-                {board.map((rowValues, row) =>
-                  rowValues.map((value, col) => {
-                    const key = positionKey([row, col]);
-                    const isSolutionPress = highlightedSolution.has(key);
-                    return (
-                      <button
-                        className={[
-                          "cell",
-                          value === 1 ? "is-lit" : "is-dark",
-                          isSolutionPress ? "is-solution" : "",
-                        ]
-                          .filter(Boolean)
-                          .join(" ")}
-                        type="button"
-                        key={key}
-                        disabled={showSolution || solved}
-                        onClick={() => press(row, col)}
-                        aria-label={`Row ${row + 1}, column ${col + 1}: ${value ? "lit" : "dark"}${
-                          isSolutionPress ? ", solution press" : ""
-                        }`}
-                      >
-                        <span className="light-core" aria-hidden="true" />
-                        {isSolutionPress && <span className="press-dot" aria-hidden="true" />}
-                      </button>
-                    );
-                  }),
-                )}
-              </div>
+              <LightsCanvas
+                board={board}
+                bulbs={skin.assets.bulbs}
+                solutionPresses={highlightedSolution}
+                disabled={showSolution || solved}
+                hud={{
+                  metrics: [
+                    {
+                      label: solutionRevealed ? "Timer paused" : "Timer",
+                      value: formatTime(elapsedSeconds),
+                    },
+                    {
+                      label: "Best",
+                      value: displayedBestTime === null ? "--:--" : formatTime(displayedBestTime),
+                    },
+                    { label: "Lit", value: `${lightsOn}/${totalCells}` },
+                  ],
+                }}
+                onActivate={({ row, col }) => press(row, col)}
+              />
 
               {solved && (
                 <div className="board-popup win-popup" role="dialog" aria-modal="true" aria-label="Puzzle solved">
@@ -328,6 +330,7 @@ export function LightsGame() {
                       New best
                     </span>
                   )}
+                  <LeaderboardLink game="lights" difficulty={`${selectedSize}x${selectedSize}`} />
                   <button className="win-action" type="button" onClick={() => void loadPuzzle(selectedSize)}>
                     <RefreshCcw aria-hidden="true" size={18} />
                     Play again

@@ -6,7 +6,6 @@ import {
   useMemo,
   useState,
   type CSSProperties,
-  type MouseEvent,
 } from "react";
 import {
   AlertTriangle,
@@ -16,15 +15,17 @@ import {
   EyeOff,
   Lightbulb,
   LoaderCircle,
-  Moon,
   PartyPopper,
   RefreshCcw,
   RotateCcw,
-  Sun,
   Trophy,
   Undo2,
   X,
 } from "lucide-react";
+import { useGameResultReporter } from "@/features/auth/AuthProvider";
+import { LeaderboardLink } from "@/features/leaderboard/LeaderboardLink";
+import { useGameSkin } from "@/features/skins/useSkins";
+import type { CanvasCellPosition } from "@/shared/canvas/CanvasBoard";
 import { fetchPuzzle } from "./api";
 import {
   BOARD_SIZES,
@@ -32,9 +33,9 @@ import {
   evaluateGame,
   formatTime,
   nextCellValue,
-  positionKey,
 } from "./game";
-import type { CellValue, Constraint, Puzzle, SymbolValue, ViolationKind } from "./types";
+import { TangoCanvas } from "./TangoCanvas";
+import type { CellValue, Puzzle, ViolationKind } from "./types";
 
 const CONFLICT_LABELS: Record<ViolationKind, string> = {
   balance: "Too many of one symbol",
@@ -43,36 +44,20 @@ const CONFLICT_LABELS: Record<ViolationKind, string> = {
 };
 
 const CONFETTI_COLORS = ["#f2a23a", "#4f8fdc", "#1f9d7a", "#d95d6f", "#263648"];
+const CONFLICT_FEEDBACK_DELAY_MS = 1300;
+const EMPTY_CONFLICTS = new Set<string>();
 
-function SymbolIcon({
-  value,
-  className = "",
-}: {
-  value: SymbolValue;
-  className?: string;
-}) {
-  if (value === 1) {
-    return <Sun aria-hidden="true" className={`symbol-icon sun-icon ${className}`} strokeWidth={2.4} />;
-  }
-  return (
-    <Moon
-      aria-hidden="true"
-      className={`symbol-icon moon-icon ${className}`}
-      fill="currentColor"
-      strokeWidth={2}
-    />
-  );
-}
-
-function constraintKey(constraint: Constraint): string {
-  return `${constraint.row}:${constraint.col}:${constraint.direction}`;
-}
+type ConflictFeedback = {
+  conflicts: ReadonlySet<string>;
+  violations: Record<ViolationKind, number>;
+};
 
 function metricLabel(count: number): string {
   return `${count} ${count === 1 ? "issue" : "issues"}`;
 }
 
 export function TangoGame() {
+  const skin = useGameSkin("tango");
   const [selectedSize, setSelectedSize] = useState(6);
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [entries, setEntries] = useState<CellValue[][]>([]);
@@ -86,6 +71,7 @@ export function TangoGame() {
   const [showSolution, setShowSolution] = useState(false);
   const [solutionRevealed, setSolutionRevealed] = useState(false);
   const [usedHint, setUsedHint] = useState(false);
+  const [conflictFeedback, setConflictFeedback] = useState<ConflictFeedback | null>(null);
 
   const status = useMemo(
     () =>
@@ -105,6 +91,17 @@ export function TangoGame() {
   const isNewBest =
     status.isSolved && !assisted && (bestTime === null || elapsedSeconds < bestTime);
   const displayedBestTime = isNewBest ? elapsedSeconds : bestTime;
+  const visibleConflicts = conflictFeedback?.conflicts ?? EMPTY_CONFLICTS;
+
+  useGameResultReporter({
+    runKey: puzzle,
+    completed: status.isSolved,
+    game: "tango",
+    difficulty: `${selectedSize}x${selectedSize}`,
+    won: true,
+    time_seconds: elapsedSeconds,
+    assisted,
+  });
 
   const loadPuzzle = useCallback(async (size: number) => {
     setIsLoading(true);
@@ -169,6 +166,22 @@ export function TangoGame() {
     }
   }, [assisted, bestTime, elapsedSeconds, selectedSize, status.isSolved]);
 
+  useEffect(() => {
+    setShowConflicts(false);
+    setConflictFeedback(null);
+    if (showSolution || status.isSolved || status.conflicts.size === 0) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setConflictFeedback({
+        conflicts: new Set(status.conflicts),
+        violations: { ...status.violations },
+      });
+    }, CONFLICT_FEEDBACK_DELAY_MS);
+    return () => window.clearTimeout(timeout);
+  }, [showSolution, status]);
+
   const updateCell = (row: number, col: number, reverse = false) => {
     if (!puzzle || puzzle.board[row][col] !== null || showSolution || status.isSolved) {
       return;
@@ -183,8 +196,7 @@ export function TangoGame() {
     });
   };
 
-  const handleContextMenu = (event: MouseEvent<HTMLButtonElement>, row: number, col: number) => {
-    event.preventDefault();
+  const handleContextMenu = ({ row, col }: CanvasCellPosition) => {
     updateCell(row, col, true);
   };
 
@@ -244,16 +256,7 @@ export function TangoGame() {
     void loadPuzzle(size);
   };
 
-  const relationByCell = useMemo(() => {
-    const map = new Map<string, Constraint[]>();
-    for (const constraint of puzzle?.constraints ?? []) {
-      const key = positionKey(constraint.row, constraint.col);
-      map.set(key, [...(map.get(key) ?? []), constraint]);
-    }
-    return map;
-  }, [puzzle]);
-
-  const activeViolations = (Object.entries(status.violations) as Array<[ViolationKind, number]>).filter(
+  const activeViolations = (Object.entries(conflictFeedback?.violations ?? {}) as Array<[ViolationKind, number]>).filter(
     ([, count]) => count > 0,
   );
 
@@ -295,7 +298,7 @@ export function TangoGame() {
           </div>
         </header>
 
-        <div className="stats-bar" aria-label="Game progress">
+        <div className="stats-bar sr-only" aria-label="Game progress">
           <div className="stat">
             <span>Timer</span>
             <strong>{formatTime(elapsedSeconds)}</strong>
@@ -330,54 +333,26 @@ export function TangoGame() {
             </div>
           ) : (
             <>
-              <div
-                className="board"
-                style={{ "--board-size": puzzle.size } as CSSProperties}
-                aria-label={`${puzzle.size} by ${puzzle.size} Tango board`}
-              >
-                {entries.map((rowValues, row) =>
-                  rowValues.map((value, col) => {
-                    const key = positionKey(row, col);
-                    const given = puzzle.board[row][col] !== null;
-                    const displayedValue = showSolution ? puzzle.solution[row][col] : value;
-                    const constraints = relationByCell.get(key) ?? [];
-
-                    return (
-                      <button
-                        className={[
-                          "cell",
-                          given ? "is-given" : "",
-                          status.conflicts.has(key) && !showSolution ? "is-conflict" : "",
-                          showSolution && !given ? "is-solution" : "",
-                        ]
-                          .filter(Boolean)
-                          .join(" ")}
-                        type="button"
-                        key={key}
-                        disabled={given || showSolution}
-                        onClick={() => updateCell(row, col)}
-                        onContextMenu={(event) => handleContextMenu(event, row, col)}
-                        aria-label={`Row ${row + 1}, column ${col + 1}: ${
-                          displayedValue === null ? "empty" : displayedValue === 1 ? "sun" : "moon"
-                        }${given ? ", given" : ""}`}
-                      >
-                        {displayedValue !== null && <SymbolIcon value={displayedValue} />}
-                        {constraints.map((constraint) => (
-                          <span
-                            className={`relation-clue ${constraint.direction}`}
-                            key={constraintKey(constraint)}
-                            aria-hidden="true"
-                          >
-                            {constraint.relation === "same" ? "=" : "×"}
-                          </span>
-                        ))}
-                      </button>
-                    );
-                  }),
-                )}
-              </div>
-
-              {status.conflicts.size > 0 && !status.isSolved && !showSolution && (
+              <TangoCanvas
+                puzzle={puzzle}
+                entries={entries}
+                symbols={skin.assets.symbols}
+                conflicts={visibleConflicts}
+                showSolution={showSolution}
+                hud={{
+                  metrics: [
+                    { label: "Timer", value: formatTime(elapsedSeconds) },
+                    {
+                      label: "Best",
+                      value: displayedBestTime === null ? "--:--" : formatTime(displayedBestTime),
+                    },
+                    { label: "Filled", value: `${status.filledCount}/${totalCells}` },
+                  ],
+                }}
+                onActivate={({ row, col }) => updateCell(row, col)}
+                onContextMenu={handleContextMenu}
+              />
+              {visibleConflicts.size > 0 && !status.isSolved && !showSolution && (
                 <button
                   className="conflict-trigger"
                   type="button"
@@ -390,7 +365,7 @@ export function TangoGame() {
                 </button>
               )}
 
-              {showConflicts && status.conflicts.size > 0 && (
+              {showConflicts && visibleConflicts.size > 0 && (
                 <>
                   <button
                     className="board-dismiss-layer"
@@ -410,7 +385,7 @@ export function TangoGame() {
                     <AlertTriangle aria-hidden="true" size={25} />
                     <div>
                       <strong>Something does not fit</strong>
-                      <p>The striped cells break one of the rules.</p>
+                      <p>The highlighted cells break one of the rules.</p>
                     </div>
                     <div className="conflict-list">
                       {activeViolations.map(([kind, count]) => (
@@ -464,6 +439,7 @@ export function TangoGame() {
                       New best
                     </span>
                   )}
+                  <LeaderboardLink game="tango" difficulty={`${selectedSize}x${selectedSize}`} />
                   <button className="win-action" type="button" onClick={() => void loadPuzzle(selectedSize)}>
                     <RefreshCcw aria-hidden="true" size={18} />
                     Play again
@@ -534,24 +510,22 @@ export function TangoGame() {
             </div>
 
             <div className="symbol-legend" aria-label="Game symbols">
-              <span>
-                <img className="legend-emoji" src="/games/tango/assets/noto-emoji/sun-face.svg" alt="" />
-                Sun
-              </span>
-              <span>
-                <img className="legend-emoji" src="/games/tango/assets/noto-emoji/crescent-moon.svg" alt="" />
-                Moon
-              </span>
+              {skin.assets.symbols.map((symbol) => (
+                <span key={symbol.label}>
+                  <img className="legend-emoji" src={symbol.src} alt="" />
+                  {symbol.label}
+                </span>
+              ))}
             </div>
 
             <ol className="rules-list">
               <li>
                 <strong>Fill every cell</strong>
-                <span>Each square must contain either a sun or a moon. Tap a free cell to cycle through both.</span>
+                <span>Each square must contain one of the two symbols. Tap a free cell to cycle through both.</span>
               </li>
               <li>
                 <strong>Keep the balance</strong>
-                <span>Every row and column must contain the same number of suns and moons.</span>
+                <span>Every row and column must contain the same number of each symbol.</span>
               </li>
               <li>
                 <strong>Stop at two</strong>

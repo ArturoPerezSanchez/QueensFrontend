@@ -4,9 +4,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
-  type MouseEvent,
-  type PointerEvent,
 } from "react";
 import {
   AlertTriangle,
@@ -23,64 +20,15 @@ import {
   Trophy,
   X as XIcon,
 } from "lucide-react";
+import { useGameResultReporter } from "@/features/auth/AuthProvider";
+import { LeaderboardLink } from "@/features/leaderboard/LeaderboardLink";
+import { useGameSkin } from "@/features/skins/useSkins";
 import { fetchPuzzle } from "./api";
-import { useQueensPatternsSetting } from "../../useConfig";
+import { useQueensPatternsSetting } from "@/features/settings/useConfig";
+import type { CanvasBoardPointer, CanvasCellPosition } from "@/shared/canvas/CanvasBoard";
 import { BOARD_SIZES, evaluateGame, formatTime, getForbiddenMarks, positionKey, toPositionSet } from "./game";
+import { QueensCanvas } from "./QueensCanvas";
 import type { Puzzle, ViolationKind } from "./types";
-
-const REGION_STYLES = [
-  {
-    color: "#f0e442",
-    pattern: "linear-gradient(145deg, rgba(255,255,255,.36), rgba(255,255,255,0) 55%)",
-    darkPattern: "linear-gradient(145deg, rgba(255,255,255,.07), rgba(255,255,255,0) 55%)",
-  },
-  {
-    color: "#56b4e9",
-    pattern: "repeating-linear-gradient(45deg, rgba(255,255,255,.28) 0 4px, transparent 4px 12px)",
-    darkPattern: "repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 4px, transparent 4px 12px)",
-  },
-  {
-    color: "#009e73",
-    pattern: "repeating-linear-gradient(135deg, rgba(255,255,255,.3) 0 3px, transparent 3px 11px)",
-    darkPattern: "repeating-linear-gradient(135deg, rgba(255,255,255,.06) 0 3px, transparent 3px 11px)",
-  },
-  {
-    color: "#e69f00",
-    pattern: "radial-gradient(circle at 30% 30%, rgba(255,255,255,.34) 0 2px, transparent 2px 11px)",
-    darkPattern: "radial-gradient(circle at 30% 30%, rgba(255,255,255,.07) 0 2px, transparent 2px 11px)",
-  },
-  {
-    color: "#0072b2",
-    pattern: "repeating-linear-gradient(0deg, rgba(255,255,255,.24) 0 3px, transparent 3px 10px)",
-    darkPattern: "repeating-linear-gradient(0deg, rgba(255,255,255,.055) 0 3px, transparent 3px 10px)",
-  },
-  {
-    color: "#cc79a7",
-    pattern: "repeating-linear-gradient(90deg, rgba(255,255,255,.24) 0 3px, transparent 3px 10px)",
-    darkPattern: "repeating-linear-gradient(90deg, rgba(255,255,255,.055) 0 3px, transparent 3px 10px)",
-  },
-  {
-    color: "#d55e00",
-    pattern: "radial-gradient(circle at 70% 34%, rgba(255,255,255,.28) 0 2px, transparent 2px 9px)",
-    darkPattern: "radial-gradient(circle at 70% 34%, rgba(255,255,255,.06) 0 2px, transparent 2px 9px)",
-  },
-  {
-    color: "#8da0cb",
-    pattern: "repeating-linear-gradient(45deg, rgba(31,41,51,.14) 0 2px, transparent 2px 9px)",
-    darkPattern: "repeating-linear-gradient(45deg, rgba(212,212,212,.045) 0 2px, transparent 2px 9px)",
-  },
-  {
-    color: "#66c2a5",
-    pattern: "repeating-linear-gradient(135deg, rgba(31,41,51,.12) 0 2px, transparent 2px 8px)",
-    darkPattern: "repeating-linear-gradient(135deg, rgba(212,212,212,.04) 0 2px, transparent 2px 8px)",
-  },
-  {
-    color: "#b3b3b3",
-    pattern: "linear-gradient(45deg, rgba(255,255,255,.26) 25%, transparent 25% 50%, rgba(31,41,51,.1) 50% 75%, transparent 75%)",
-    darkPattern:
-      "linear-gradient(45deg, rgba(255,255,255,.055) 25%, transparent 25% 50%, rgba(212,212,212,.035) 50% 75%, transparent 75%)",
-  },
-];
 
 type LoadState = "idle" | "loading" | "ready" | "error";
 
@@ -110,6 +58,7 @@ function violationLabel(kind: ViolationKind): string {
 }
 
 export function QueensGame() {
+  const skin = useGameSkin("queens");
   const [size, setSize] = useState(8);
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [queens, setQueens] = useState<Set<string>>(() => new Set());
@@ -154,6 +103,16 @@ export function QueensGame() {
     return next;
   }, [forbiddenMarks, manualMarks, queens]);
   const bestTime = bestTimes[String(size)];
+
+  useGameResultReporter({
+    runKey: puzzle,
+    completed: Boolean(gameStatus?.isSolved),
+    game: "queens",
+    difficulty: `${size}x${size}`,
+    won: true,
+    time_seconds: elapsedSeconds,
+    assisted: solutionRevealed,
+  });
 
   const loadPuzzle = useCallback(async (nextSize: number, signal?: AbortSignal) => {
     setLoadState("loading");
@@ -331,7 +290,8 @@ export function QueensGame() {
     }
   }
 
-  function startLongPressMark(event: PointerEvent<HTMLButtonElement>, row: number, col: number): void {
+  function startLongPressMark(pointer: CanvasBoardPointer): void {
+    const { event, row, col } = pointer;
     if (event.pointerType === "mouse") {
       return;
     }
@@ -360,7 +320,8 @@ export function QueensGame() {
     setCellMark(row, col, markDragMode.current === "add");
   }
 
-  function handleCellPointerDown(event: PointerEvent<HTMLButtonElement>, row: number, col: number): void {
+  function handleCellPointerDown(pointer: CanvasBoardPointer): void {
+    const { event, row, col } = pointer;
     if (event.pointerType === "mouse" && event.button === 2) {
       event.preventDefault();
       clearLongPressTimer();
@@ -372,22 +333,17 @@ export function QueensGame() {
       return;
     }
 
-    startLongPressMark(event, row, col);
+    startLongPressMark(pointer);
   }
 
-  function continueMarkDrag(event: PointerEvent<HTMLButtonElement>, row: number, col: number): void {
+  function continueMarkDrag(pointer: CanvasBoardPointer): void {
+    const { event, row, col } = pointer;
     if (!isMarkDragging.current || event.pointerType !== "mouse") {
       return;
     }
 
     event.preventDefault();
     paintDraggedMark(row, col);
-  }
-
-  function handleCellPointerLeave(): void {
-    if (!isMarkDragging.current) {
-      clearLongPressTimer();
-    }
   }
 
   function handleCellClick(row: number, col: number): void {
@@ -401,9 +357,7 @@ export function QueensGame() {
     toggleQueen(row, col);
   }
 
-  function handleCellContextMenu(event: MouseEvent<HTMLButtonElement>, row: number, col: number): void {
-    event.preventDefault();
-
+  function handleCellContextMenu({ row, col }: CanvasCellPosition): void {
     if (suppressNextContextMenu.current) {
       suppressNextContextMenu.current = false;
       return;
@@ -448,7 +402,7 @@ export function QueensGame() {
         <div className="top-bar">
           <div className="brand-lockup">
             <span className="brand-mark" aria-hidden="true">
-              <img src="/logo.png" alt="" />
+              <img src="/games/queens/logo.png" alt="" />
             </span>
             <div>
               <h1>Queens</h1>
@@ -485,7 +439,7 @@ export function QueensGame() {
           </div>
         </div>
 
-        <div className="stats-grid" aria-live="polite">
+        <div className="stats-grid sr-only" aria-live="polite">
           <div className="stat-tile">
             <span>{solutionRevealed ? "Timer paused" : "Timer"}</span>
             <strong>{formatTime(elapsedSeconds)}</strong>
@@ -522,70 +476,50 @@ export function QueensGame() {
           )}
 
           {puzzle && loadState === "ready" && (
-            <div
-              className={`board ${showPatterns ? "patterns-enabled" : ""}`}
-              style={{ "--board-size": puzzle.size } as CSSProperties}
-              aria-label={`${puzzle.size} by ${puzzle.size} Queens board`}
-            >
-              {puzzle.board.map((row, rowIndex) =>
-                row.map((region, colIndex) => {
-                  const key = positionKey(rowIndex, colIndex);
-                  const hasQueen = queens.has(key);
-                  const hasMark = marks.has(key);
-                  const isConflict = gameStatus?.conflicts.has(key);
-                  const isConflictHint = gameStatus
-                    ? (Object.keys(gameStatus.conflictHints) as ViolationKind[]).some((kind) =>
-                        gameStatus.conflictHints[kind].has(key),
-                      )
-                    : false;
-                  const isSolution = showSolution && solutionCells.has(key);
-                  const regionStyle = REGION_STYLES[Math.abs(region) % REGION_STYLES.length];
-
-                  return (
-                    <button
-                      className={[
-                        "cell",
-                        hasQueen ? "has-queen" : "",
-                        hasMark ? "has-mark" : "",
-                        isConflictHint ? "is-conflict-hint" : "",
-                        isConflict ? "is-conflict" : "",
-                        isSolution ? "is-solution" : "",
-                      ]
-                        .filter(Boolean)
-                        .join(" ")}
-                      key={key}
-                      style={
-                        {
-                          "--region-color": regionStyle.color,
-                          "--region-pattern": regionStyle.pattern,
-                          "--region-pattern-dark": regionStyle.darkPattern,
-                        } as CSSProperties
-                      }
-                      type="button"
-                      aria-label={`Row ${rowIndex + 1}, column ${colIndex + 1}, region ${region}${
-                        hasMark ? ", marked unavailable" : ""
-                      }`}
-                      aria-pressed={hasQueen}
-                      onClick={() => handleCellClick(rowIndex, colIndex)}
-                      onContextMenu={(event) => handleCellContextMenu(event, rowIndex, colIndex)}
-                      onPointerCancel={() => {
-                        clearLongPressTimer();
-                        finishMarkDrag();
-                      }}
-                      onPointerDown={(event) => handleCellPointerDown(event, rowIndex, colIndex)}
-                      onPointerEnter={(event) => continueMarkDrag(event, rowIndex, colIndex)}
-                      onPointerLeave={handleCellPointerLeave}
-                      onPointerMove={(event) => continueMarkDrag(event, rowIndex, colIndex)}
-                      onPointerUp={clearLongPressTimer}
-                    >
-                      {hasQueen && <img className="queen-piece" src="/queen.png" alt="" />}
-                      {hasMark && <XIcon className="mark-icon" size={30} strokeWidth={1.45} />}
-                      {isSolution && !hasQueen && <img className="solution-piece" src="/queen.png" alt="" />}
-                    </button>
-                  );
-                }),
-              )}
-            </div>
+            <QueensCanvas
+              board={puzzle.board}
+              marker={skin.assets.marker}
+              queens={queens}
+              marks={marks}
+              conflicts={gameStatus?.conflicts ?? new Set()}
+              conflictHints={
+                new Set(
+                  gameStatus
+                    ? (Object.keys(gameStatus.conflictHints) as ViolationKind[]).flatMap((kind) => [
+                        ...gameStatus.conflictHints[kind],
+                      ])
+                    : [],
+                )
+              }
+              solutionCells={solutionCells}
+              showSolution={showSolution}
+              showPatterns={showPatterns}
+              hud={{
+                metrics: [
+                  {
+                    label: solutionRevealed ? "Timer paused" : "Timer",
+                    value: formatTime(elapsedSeconds),
+                  },
+                  {
+                    label: "Best",
+                    value: bestTime === undefined ? "--:--" : formatTime(bestTime),
+                  },
+                  {
+                    label: "Queens",
+                    value: `${gameStatus?.queenCount ?? 0}/${puzzle?.size ?? size}`,
+                  },
+                ],
+              }}
+              onActivate={({ row, col }) => handleCellClick(row, col)}
+              onContextMenu={handleCellContextMenu}
+              onPointerDown={handleCellPointerDown}
+              onPointerMove={continueMarkDrag}
+              onPointerUp={clearLongPressTimer}
+              onPointerCancel={() => {
+                clearLongPressTimer();
+                finishMarkDrag();
+              }}
+            />
           )}
 
           {gameStatus?.isSolved && (
@@ -610,6 +544,7 @@ export function QueensGame() {
                   New best
                 </span>
               )}
+              <LeaderboardLink game="queens" difficulty={`${size}x${size}`} />
               <button className="win-action" type="button" onClick={requestNewPuzzle}>
                 <RefreshCcw size={17} />
                 Play again

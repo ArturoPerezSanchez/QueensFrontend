@@ -3,11 +3,9 @@
 import {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
   type CSSProperties,
-  type PointerEvent as ReactPointerEvent,
 } from "react";
 import {
   AlertTriangle,
@@ -24,25 +22,24 @@ import {
   Undo2,
   X,
 } from "lucide-react";
+import { useGameResultReporter } from "@/features/auth/AuthProvider";
+import { LeaderboardLink } from "@/features/leaderboard/LeaderboardLink";
+import { useGameSkin } from "@/features/skins/useSkins";
+import type { CanvasBoardPointer } from "@/shared/canvas/CanvasBoard";
 import { fetchPuzzle } from "./api";
 import {
   BOARD_SIZES,
   createInitialPath,
   formatTime,
   isSolved,
-  pathPoints,
-  positionKey,
   samePosition,
   solutionPrefixWithHint,
   tryStep,
 } from "./game";
-import type { InvalidMove, Position, Puzzle, Wall } from "./types";
+import { ZipCanvas } from "./ZipCanvas";
+import type { InvalidMove, Position, Puzzle } from "./types";
 
 const CONFETTI_COLORS = ["#f28c28", "#f0ad3d", "#3977a8", "#d65b5b", "#263642"];
-
-function wallKey(row: number, col: number): string {
-  return `${row}:${col}`;
-}
 
 function invalidMoveCopy(move: InvalidMove): { title: string; description: string } {
   switch (move.kind) {
@@ -74,18 +71,9 @@ function invalidMoveCopy(move: InvalidMove): { title: string; description: strin
   }
 }
 
-function cellFromPointer(event: ReactPointerEvent<HTMLElement>): Position | null {
-  const target = document
-    .elementFromPoint(event.clientX, event.clientY)
-    ?.closest<HTMLElement>("[data-row][data-col]");
-  if (!target) {
-    return null;
-  }
-
-  return [Number(target.dataset.row), Number(target.dataset.col)];
-}
-
 export function ZipGame() {
+  const skin = useGameSkin("zip");
+  const revealImage = skin.assets.revealImage;
   const [selectedSize, setSelectedSize] = useState(6);
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [path, setPath] = useState<Position[]>([]);
@@ -100,6 +88,8 @@ export function ZipGame() {
   const [solutionRevealed, setSolutionRevealed] = useState(false);
   const [usedHint, setUsedHint] = useState(false);
   const [isNewBest, setIsNewBest] = useState(false);
+  const [showWinSummary, setShowWinSummary] = useState(true);
+  const [completionRevealComplete, setCompletionRevealComplete] = useState(false);
 
   const pathRef = useRef<Position[]>([]);
   const drawingRef = useRef(false);
@@ -112,9 +102,22 @@ export function ZipGame() {
   const displayedBestTime = isNewBest ? elapsedSeconds : bestTime;
   const progress = totalCells === 0 ? 0 : (path.length / totalCells) * 100;
 
+  useGameResultReporter({
+    runKey: puzzle,
+    completed: solved,
+    game: "zip",
+    difficulty: `${selectedSize}x${selectedSize}`,
+    won: true,
+    time_seconds: elapsedSeconds,
+    assisted,
+  });
+
   const setCurrentPath = useCallback((nextPath: Position[]) => {
     pathRef.current = nextPath;
     setPath(nextPath);
+  }, []);
+  const finishCompletionReveal = useCallback(() => {
+    setCompletionRevealComplete(true);
   }, []);
 
   const initializePuzzle = useCallback(
@@ -128,6 +131,8 @@ export function ZipGame() {
       setSolutionRevealed(false);
       setUsedHint(false);
       setIsNewBest(false);
+      setShowWinSummary(true);
+      setCompletionRevealComplete(false);
       completedRef.current = false;
       const stored = window.localStorage.getItem(`zip-best-${size}`);
       setBestTime(stored ? Number(stored) : null);
@@ -150,6 +155,8 @@ export function ZipGame() {
       setSolutionRevealed(false);
       setUsedHint(false);
       setIsNewBest(false);
+      setShowWinSummary(true);
+      setCompletionRevealComplete(false);
       completedRef.current = false;
 
       try {
@@ -205,23 +212,6 @@ export function ZipGame() {
     return () => window.clearInterval(timer);
   }, [isLoading, puzzle, solutionRevealed, solved]);
 
-  const wallDirections = useMemo(() => {
-    const map = new Map<string, Set<Wall["direction"]>>();
-    for (const wall of puzzle?.walls ?? []) {
-      const key = wallKey(wall.row, wall.col);
-      const directions = map.get(key) ?? new Set<Wall["direction"]>();
-      directions.add(wall.direction);
-      map.set(key, directions);
-    }
-    return map;
-  }, [puzzle]);
-
-  const displayedPath = showSolution && puzzle ? puzzle.solution : path;
-  const visited = useMemo(
-    () => new Set(displayedPath.map(positionKey)),
-    [displayedPath],
-  );
-  const endpoint = displayedPath.at(-1);
   const moveCopy = invalidMove ? invalidMoveCopy(invalidMove) : null;
 
   const attemptTarget = useCallback(
@@ -267,39 +257,27 @@ export function ZipGame() {
     ],
   );
 
-  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+  const handlePointerDown = ({ event, row, col }: CanvasBoardPointer) => {
     if (event.pointerType === "mouse" && event.button !== 0) {
-      return;
-    }
-
-    const target = cellFromPointer(event);
-    if (!target) {
       return;
     }
 
     event.preventDefault();
     drawingRef.current = true;
-    event.currentTarget.setPointerCapture(event.pointerId);
-    attemptTarget(target, { allowRewind: true });
+    attemptTarget([row, col], { allowRewind: true });
   };
 
-  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+  const handlePointerMove = ({ event, row, col }: CanvasBoardPointer) => {
     if (!drawingRef.current) {
       return;
     }
 
     event.preventDefault();
-    const target = cellFromPointer(event);
-    if (target) {
-      attemptTarget(target, { allowRewind: false });
-    }
+    attemptTarget([row, col], { allowRewind: false });
   };
 
-  const finishDrawing = (event: ReactPointerEvent<HTMLDivElement>) => {
+  const finishDrawing = () => {
     drawingRef.current = false;
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
   };
 
   const undo = () => {
@@ -320,6 +298,8 @@ export function ZipGame() {
     setInvalidMove(null);
     setShowConflict(false);
     setIsNewBest(false);
+    setShowWinSummary(true);
+    setCompletionRevealComplete(false);
     completedRef.current = false;
   };
 
@@ -389,7 +369,7 @@ export function ZipGame() {
           </div>
         </header>
 
-        <div className="stats-bar" aria-label="Game progress">
+        <div className="stats-bar sr-only" aria-label="Game progress">
           <div className="stat">
             <span>{solutionRevealed ? "Timer paused" : "Timer"}</span>
             <strong>{formatTime(elapsedSeconds)}</strong>
@@ -424,97 +404,47 @@ export function ZipGame() {
             </div>
           ) : (
             <>
-              <div
-                className={`board ${showSolution ? "is-showing-solution" : ""}`}
-                style={{ "--board-size": puzzle.size } as CSSProperties}
-                aria-label={`${puzzle.size} by ${puzzle.size} Zip board`}
-                onContextMenu={(event) => event.preventDefault()}
-                onPointerCancel={finishDrawing}
+              <ZipCanvas
+                puzzle={puzzle}
+                path={showSolution ? puzzle.solution : path}
+                revealImage={revealImage}
+                invalidMove={invalidMove}
+                showSolution={showSolution}
+                disabled={showSolution || solved}
+                completed={solved}
+                completionRevealComplete={completionRevealComplete}
+                hud={{
+                  metrics: [
+                    {
+                      label: solutionRevealed ? "Timer paused" : "Timer",
+                      value: formatTime(elapsedSeconds),
+                    },
+                    {
+                      label: "Best",
+                      value: displayedBestTime === null ? "--:--" : formatTime(displayedBestTime),
+                    },
+                    { label: "Path", value: `${path.length}/${totalCells}` },
+                  ],
+                }}
+                onCompletionRevealComplete={finishCompletionReveal}
+                onActivate={({ row, col }) => attemptTarget([row, col], { allowRewind: true })}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={finishDrawing}
-              >
-                {puzzle.board.map((rowValues, row) =>
-                  rowValues.map((clue, col) => {
-                    const key = positionKey([row, col]);
-                    const directions = wallDirections.get(wallKey(row, col));
-                    const isEndpoint = endpoint?.[0] === row && endpoint[1] === col;
-                    const isInvalid =
-                      !showSolution &&
-                      invalidMove?.target[0] === row &&
-                      invalidMove.target[1] === col;
+              />
 
-                    return (
-                      <button
-                        className={[
-                          "cell",
-                          visited.has(key) ? "is-visited" : "",
-                          isEndpoint ? "is-endpoint" : "",
-                          isInvalid ? "is-invalid" : "",
-                          clue !== null ? "has-clue" : "",
-                        ]
-                          .filter(Boolean)
-                          .join(" ")}
-                        type="button"
-                        key={key}
-                        data-row={row}
-                        data-col={col}
-                        aria-label={`Row ${row + 1}, column ${col + 1}${
-                          clue === null ? "" : `, number ${clue}`
-                        }${visited.has(key) ? ", in path" : ""}`}
-                        onClick={(event) => {
-                          if (event.detail === 0) {
-                            attemptTarget([row, col], { allowRewind: true });
-                          }
-                        }}
-                      >
-                        {clue !== null && <span className="clue">{clue}</span>}
-                        {directions?.has("right") && <span className="wall wall-right" aria-hidden="true" />}
-                        {directions?.has("down") && <span className="wall wall-down" aria-hidden="true" />}
-                      </button>
-                    );
-                  }),
-                )}
-
-                <svg
-                  className={`path-layer ${showSolution ? "solution-path" : ""}`}
-                  viewBox={`0 0 ${puzzle.size} ${puzzle.size}`}
-                  aria-hidden="true"
+              {invalidMove && !showSolution && !solved && (
+                <button
+                  className="conflict-trigger"
+                  type="button"
+                  aria-label="Show invalid move details"
+                  aria-expanded={showConflict}
+                  onClick={() => setShowConflict((current) => !current)}
+                  title="Invalid move"
                 >
-                  <defs>
-                    <linearGradient
-                      id="route-gradient"
-                      gradientUnits="userSpaceOnUse"
-                      x1="0"
-                      y1="0"
-                      x2={puzzle.size}
-                      y2={puzzle.size}
-                    >
-                      <stop offset="0%" stopColor="#c95615" />
-                      <stop offset="45%" stopColor="#f28c28" />
-                      <stop offset="72%" stopColor="#f0b33f" />
-                      <stop offset="100%" stopColor="#d95f5f" />
-                    </linearGradient>
-                  </defs>
-                  <polyline points={pathPoints(displayedPath)} />
-                  {displayedPath.length === 1 && (
-                    <circle cx={displayedPath[0][1] + 0.5} cy={displayedPath[0][0] + 0.5} r="0.11" />
-                  )}
-                </svg>
-
-                {invalidMove && !showSolution && !solved && (
-                  <button
-                    className="conflict-trigger"
-                    type="button"
-                    aria-label="Show invalid move details"
-                    aria-expanded={showConflict}
-                    onClick={() => setShowConflict((current) => !current)}
-                    title="Invalid move"
-                  >
-                    <AlertTriangle aria-hidden="true" size={22} />
-                  </button>
-                )}
-              </div>
+                  <AlertTriangle aria-hidden="true" size={22} />
+                </button>
+              )}
 
               {showConflict && invalidMove && moveCopy && (
                 <>
@@ -552,7 +482,7 @@ export function ZipGame() {
                 </>
               )}
 
-              {solved && (
+              {solved && showWinSummary && (!revealImage || completionRevealComplete) && (
                 <div className="board-popup win-popup" role="dialog" aria-modal="true" aria-label="Puzzle solved">
                   <div className="confetti-field" aria-hidden="true">
                     {Array.from({ length: 18 }, (_, index) => (
@@ -583,11 +513,34 @@ export function ZipGame() {
                       New best
                     </span>
                   )}
+                  {revealImage && (
+                    <button
+                      className="artwork-action"
+                      type="button"
+                      onClick={() => setShowWinSummary(false)}
+                    >
+                      <Eye aria-hidden="true" size={17} />
+                      View artwork
+                    </button>
+                  )}
+                  <LeaderboardLink game="zip" difficulty={`${selectedSize}x${selectedSize}`} />
                   <button className="win-action" type="button" onClick={() => void loadPuzzle(selectedSize)}>
                     <RefreshCcw aria-hidden="true" size={18} />
                     Play again
                   </button>
                 </div>
+              )}
+
+              {solved && !showWinSummary && (!revealImage || completionRevealComplete) && (
+                <button
+                  className="win-reopen"
+                  type="button"
+                  aria-label="Show completion summary"
+                  title="Completion summary"
+                  onClick={() => setShowWinSummary(true)}
+                >
+                  <Trophy aria-hidden="true" size={19} />
+                </button>
               )}
             </>
           )}

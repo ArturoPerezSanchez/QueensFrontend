@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
+import { fileURLToPath, URL } from "node:url";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
@@ -10,42 +11,41 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    resolve: {
+      alias: {
+        "@": fileURLToPath(new URL("./src", import.meta.url)),
+      },
+    },
     server: {
       proxy: {
-        "/api/queens": {
+        "/api/v1": {
           target: gamesApiOrigin,
           changeOrigin: true,
-          rewrite: (path: string) => path.replace(/^\/api/, ""),
         },
-        "/api/tango": {
-          target: gamesApiOrigin,
-          changeOrigin: true,
-          rewrite: (path: string) => path.replace(/^\/api/, ""),
-        },
-        "/api/lights": {
-          target: gamesApiOrigin,
-          changeOrigin: true,
-          rewrite: (path: string) => path.replace(/^\/api/, ""),
-        },
-        "/api/tracks": {
-          target: gamesApiOrigin,
-          changeOrigin: true,
-          rewrite: (path: string) => path.replace(/^\/api/, ""),
-        },
-        "/api/zip": {
-          target: gamesApiOrigin,
-          changeOrigin: true,
-          rewrite: (path: string) => path.replace(/^\/api/, ""),
-        },
-        "/api/mine-islands": {
-          target: gamesApiOrigin,
-          changeOrigin: true,
-          rewrite: (path: string) => path.replace(/^\/api/, ""),
-        },
-        "/api/mini-chess": {
-          target: gamesApiOrigin,
-          changeOrigin: true,
-          rewrite: (path: string) => path.replace(/^\/api/, ""),
+      },
+    },
+    build: {
+      chunkSizeWarningLimit: 600,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes("vite/preload-helper")) {
+              return "runtime";
+            }
+            if (id.includes("node_modules/pixi.js")) {
+              return "pixi";
+            }
+            if (
+              id.includes("node_modules/react/") ||
+              id.includes("node_modules/react-dom/") ||
+              id.includes("node_modules/scheduler/")
+            ) {
+              return "react";
+            }
+            if (id.includes("node_modules/lucide-react/")) {
+              return "icons";
+            }
+          },
         },
       },
     },

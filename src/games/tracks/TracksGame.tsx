@@ -16,6 +16,9 @@ import {
   Undo2,
   X,
 } from "lucide-react";
+import { useGameResultReporter } from "@/features/auth/AuthProvider";
+import { LeaderboardLink } from "@/features/leaderboard/LeaderboardLink";
+import { useGameSkin } from "@/features/skins/useSkins";
 import { fetchPuzzle } from "./api";
 import {
   BOARD_SIZES,
@@ -39,18 +42,13 @@ import {
   rotateCell,
   trackCount,
 } from "./game";
+import { TracksCanvas, type FlowCell } from "./TracksCanvas";
 import type { Board, Position, Puzzle } from "./types";
 
 const CONFETTI_COLORS = ["#168b83", "#f2ad3f", "#3b79a7", "#d55466", "#263642"];
 const DIAGONAL_CROSSING_GAP = 10;
 const FLOW_DASH_PERIOD = 30;
 const TRACK_CONNECTION_OVERLAP = 1;
-
-type FlowCell = {
-  centerPhase: number;
-  inbound: number | null;
-  outbound: number[];
-};
 
 function endpointForDirection(direction: number, extension = 0): [number, number] {
   switch (direction) {
@@ -354,6 +352,7 @@ function connectedFlowMap(board: Board, start: Position): Map<string, FlowCell> 
 }
 
 export function TracksGame() {
+  const skin = useGameSkin("tracks");
   const [selectedSize, setSelectedSize] = useState(7);
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [board, setBoard] = useState<Board>([]);
@@ -381,6 +380,16 @@ export function TracksGame() {
   const crossingGaps = useMemo(() => diagonalCrossingGaps(displayedBoard), [displayedBoard]);
   const connectedTracks = connectedFlow;
   const displayedBestTime = isNewBest ? elapsedSeconds : bestTime;
+
+  useGameResultReporter({
+    runKey: puzzle,
+    completed: solved,
+    game: "tracks",
+    difficulty: `${selectedSize}x${selectedSize}`,
+    won: true,
+    time_seconds: elapsedSeconds,
+    assisted,
+  });
 
   const initializePuzzle = useCallback((nextPuzzle: Puzzle, size: number) => {
     setSelectedSize(size);
@@ -452,7 +461,7 @@ export function TracksGame() {
     window.localStorage.setItem(`tracks-best-${selectedSize}`, String(elapsedSeconds));
   }, [elapsedSeconds, isNewBest, selectedSize]);
 
-  const rotate = (row: number, col: number) => {
+  const rotate = (row: number, col: number, turns = 1) => {
     if (
       !puzzle ||
       showSolution ||
@@ -464,7 +473,7 @@ export function TracksGame() {
     }
 
     setHistory((current) => [...current, cloneBoard(board)]);
-    setBoard((current) => rotateCell(current, row, col));
+    setBoard((current) => rotateCell(current, row, col, turns));
   };
 
   const undo = () => {
@@ -548,7 +557,7 @@ export function TracksGame() {
           </div>
         </header>
 
-        <div className="stats-bar" aria-label="Game progress">
+        <div className="stats-bar sr-only" aria-label="Game progress">
           <div className="stat">
             <span>{solutionRevealed ? "Timer paused" : "Timer"}</span>
             <strong>{formatTime(elapsedSeconds)}</strong>
@@ -583,62 +592,30 @@ export function TracksGame() {
             </div>
           ) : (
             <>
-              <div
-                className={`board ${showSolution ? "is-showing-solution" : ""}`}
-                style={{ "--board-size": puzzle.size } as CSSProperties}
-                aria-label={`${puzzle.size} by ${puzzle.size} Tracks board`}
-              >
-                {displayedBoard.map((rowValues, row) =>
-                  rowValues.map((mask, col) => {
-                    const key = positionKey([row, col]);
-                    const isStart = puzzle.start[0] === row && puzzle.start[1] === col;
-                    const isEnd = puzzle.end[0] === row && puzzle.end[1] === col;
-                    const isEndpoint = isStart || isEnd;
-                    const flow = connectedFlow.get(key);
-                    const startFlow: FlowCell | undefined =
-                      isStart && mask !== 0
-                        ? {
-                            centerPhase: 0,
-                            inbound: null,
-                            outbound: DIRECTIONS.filter((direction) => Boolean(mask & direction)),
-                          }
-                        : undefined;
-                    const glyphFlow = startFlow ?? flow;
-                    const isConnected = Boolean(glyphFlow);
-
-                    return (
-                      <button
-                        className={[
-                          "cell",
-                          mask === 0 ? "is-empty" : "has-track",
-                          isConnected ? "is-connected" : "",
-                          isEndpoint ? "is-endpoint" : "",
-                          isStart ? "is-start" : "",
-                          isEnd ? "is-end" : "",
-                        ]
-                          .filter(Boolean)
-                          .join(" ")}
-                        type="button"
-                        key={key}
-                        disabled={mask === 0 || isStart || showSolution || solved}
-                        onClick={() => rotate(row, col)}
-                        aria-label={`Row ${row + 1}, column ${col + 1}${
-                          mask === 0
-                            ? ", empty"
-                            : isStart
-                              ? ", start track"
-                              : isEnd
-                                ? ", end track"
-                                : ", track piece"
-                        }`}
-                      >
-                        <TrackGlyph flow={glyphFlow} gapDirections={crossingGaps.get(key)} mask={mask} />
-                        {isEndpoint && <span className="endpoint-dot" aria-hidden="true" />}
-                      </button>
-                    );
-                  }),
-                )}
-              </div>
+              <TracksCanvas
+                board={displayedBoard}
+                puzzle={puzzle}
+                flow={connectedFlow}
+                crossingGaps={crossingGaps}
+                assets={skin.assets}
+                disabled={showSolution || solved}
+                solutionShown={showSolution}
+                hud={{
+                  metrics: [
+                    {
+                      label: solutionRevealed ? "Timer paused" : "Timer",
+                      value: formatTime(elapsedSeconds),
+                    },
+                    {
+                      label: "Best",
+                      value: displayedBestTime === null ? "--:--" : formatTime(displayedBestTime),
+                    },
+                    { label: "Flow", value: `${connectedTracks.size}/${totalTracks}` },
+                  ],
+                }}
+                onActivate={({ row, col }) => rotate(row, col)}
+                onWheelRotate={({ row, col }, direction) => rotate(row, col, direction)}
+              />
 
               {solved && (
                 <div className="board-popup win-popup" role="dialog" aria-modal="true" aria-label="Puzzle solved">
@@ -671,6 +648,7 @@ export function TracksGame() {
                       New best
                     </span>
                   )}
+                  <LeaderboardLink game="tracks" difficulty={`${selectedSize}x${selectedSize}`} />
                   <button className="win-action" type="button" onClick={() => void loadPuzzle(selectedSize)}>
                     <RefreshCcw aria-hidden="true" size={18} />
                     Play again

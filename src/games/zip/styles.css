@@ -347,7 +347,7 @@
   pointer-events: none;
 }
 
-.game-zip .path-layer polyline {
+.game-zip .path-layer .route-path {
   fill: none;
   stroke: url("#route-gradient");
   stroke-linecap: round;
@@ -356,12 +356,20 @@
   filter: drop-shadow(0 0.04px 0.04px rgba(133, 65, 15, 0.48));
 }
 
+.game-zip .path-layer .route-outline {
+  fill: none;
+  stroke: rgba(21, 28, 32, 0.62);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 0.38;
+}
+
 .game-zip .path-layer circle {
   fill: var(--route);
   stroke: none;
 }
 
-.game-zip .path-layer.solution-path polyline {
+.game-zip .path-layer.solution-path .route-path {
   stroke: var(--gold);
   opacity: 0.74;
 }
@@ -663,6 +671,55 @@
 
 .game-zip .win-action {
   grid-column: 1 / -1;
+}
+
+.game-zip .artwork-action {
+  display: inline-flex;
+  grid-column: 1 / -1;
+  justify-self: start;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 11px;
+  gap: 7px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  background: var(--surface);
+  font-size: 0.84rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.game-zip .artwork-action:hover,
+.game-zip .artwork-action:focus-visible {
+  border-color: var(--route-dark);
+  outline: none;
+}
+
+.game-zip .win-reopen {
+  position: absolute;
+  z-index: 8;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  border-radius: 50%;
+  color: #372f22;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 8px 22px rgba(23, 28, 31, 0.22);
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+}
+
+.game-zip .win-reopen:hover,
+.game-zip .win-reopen:focus-visible {
+  background: #ffffff;
+  outline: 3px solid color-mix(in srgb, var(--route) 48%, transparent);
+  outline-offset: 2px;
 }
 
 .game-zip .confetti-field {

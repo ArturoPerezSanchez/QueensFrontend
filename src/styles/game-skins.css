@@ -1,0 +1,494 @@
+/* Skin tokens live on the suite root so future achievement skins remain data-only. */
+.suite-shell[data-game="queens"] {
+  --game-accent: #7057d9;
+  --game-logo-bg: #ece8fb;
+  --region-1: #efd35b;
+  --region-2: #79b9df;
+  --region-3: #75bf99;
+  --region-4: #eaa064;
+  --region-5: #7897d0;
+  --region-6: #ca87b0;
+  --region-7: #df765e;
+  --region-8: #a89bd0;
+  --region-9: #87c5b9;
+  --region-10: #b8bdc4;
+}
+
+.suite-shell[data-game="queens"][data-skin="garden"] {
+  --game-accent: #b8414e;
+  --game-logo-bg: #f5e8e9;
+  --region-1: #e6bf55;
+  --region-2: #75a988;
+  --region-3: #a7c5b4;
+  --region-4: #d9866d;
+  --region-5: #7395b6;
+  --region-6: #bc788f;
+  --region-7: #cf5b5c;
+  --region-8: #9186ad;
+  --region-9: #72a49c;
+  --region-10: #b3b7b9;
+}
+
+.suite-shell[data-game="tango"] {
+  --game-accent: #3478bd;
+  --game-logo-bg: #eef1f4;
+  --symbol-1: #d69e2e;
+  --symbol-1-soft: #f5d476;
+  --symbol-0: #3f7fca;
+  --symbol-0-soft: #8db9e8;
+  --teal: #2f8f83;
+  --board-cell: #f8f9fa;
+  --board-given: #e1e4e7;
+}
+
+.suite-shell[data-game="tango"][data-skin="elements"] {
+  --game-accent: #2684a5;
+  --symbol-1: #dc6538;
+  --symbol-1-soft: #f2a15f;
+  --symbol-0: #247bc0;
+  --symbol-0-soft: #75c8e9;
+  --teal: #218c85;
+  --board-cell: #f7f8f9;
+  --board-given: #dfe8e9;
+}
+
+.suite-shell[data-game="lights"] {
+  --game-accent: #2f8f83;
+  --game-logo-bg: #edf5f3;
+  --cell: #eef1f3;
+  --cell-alt: #e6eaed;
+  --glow: #e8b83f;
+  --glow-soft: #f6dda0;
+  --route: #2f8f83;
+  --light-off: #cbd2d7;
+}
+
+.suite-shell[data-game="tracks"] {
+  --game-accent: #168b78;
+  --game-logo-bg: #e9f4f1;
+  --cell: #edf1f3;
+  --cell-alt: #edf1f3;
+  --empty-cell: #dfe6e9;
+  --track: #415a66;
+  --track-channel: #b8c4c9;
+  --track-node-center: #7f98a3;
+  --track-node-mid: #5e7782;
+  --track-node-rim: #354b55;
+  --track-node-asset: #415a66;
+  --flow: #15967f;
+  --flow-bright: #73d7c4;
+  --flow-glow: rgba(21, 150, 127, 0.42);
+  --start: #3686ae;
+  --end: #d85f50;
+  --lime: #77a96b;
+  --gold: #d3a44a;
+  --gold-soft: #f1dda7;
+}
+
+.suite-shell[data-game="tracks"][data-skin="liquid"] {
+  --game-accent: #168fbe;
+  --game-logo-bg: #e4f3f8;
+  --cell: #eaf2f5;
+  --cell-alt: #eaf2f5;
+  --empty-cell: #dce8ec;
+  --track: #3c5c69;
+  --track-channel: #b8d7e3;
+  --track-node-asset: #168fbe;
+  --flow: #1aa6d9;
+  --flow-bright: #d6f8ff;
+  --flow-glow: rgba(26, 166, 217, 0.52);
+  --start: #367eac;
+  --end: #d65d67;
+}
+
+.suite-shell[data-game="tracks"][data-skin="electric"] {
+  --game-accent: #b88916;
+  --game-logo-bg: #f7f0da;
+  --cell: #f1f0ea;
+  --cell-alt: #f1f0ea;
+  --empty-cell: #e3e2db;
+  --track: #525861;
+  --track-channel: #c7c1a6;
+  --track-node-asset: #c89105;
+  --flow: #e2ad17;
+  --flow-bright: #fff3a3;
+  --flow-glow: rgba(226, 173, 23, 0.64);
+  --start: #367eac;
+  --end: #d75573;
+}
+
+.suite-shell[data-game="zip"] {
+  --game-accent: #2f82b7;
+  --game-logo-bg: #e8f1f7;
+  --cell: #f3f5f6;
+  --cell-alt: #e9edef;
+  --route: #2f82b7;
+  --route-dark: #23658e;
+  --route-soft: #c7dfed;
+  --route-visited: #dceaf2;
+  --gold: #d6a43f;
+  --gold-soft: #f2dfaa;
+}
+
+.suite-shell[data-game="zip"][data-skin="spain"] {
+  --game-accent: #b64d38;
+  --game-logo-bg: #f3e8df;
+  --cell: #e6e2da;
+  --cell-alt: #ddd9d1;
+  --route: #c65b3e;
+  --route-dark: #7d372a;
+  --route-soft: #e7c6a7;
+  --route-visited: #dcd2c2;
+  --gold: #d4a13f;
+  --gold-soft: #efe0b9;
+}
+
+.suite-shell[data-game="mine-islands"] {
+  --game-accent: #377cc0;
+  --game-logo-bg: #e9f0f8;
+  --covered: #dadddf;
+  --covered-hover: #cfd4d8;
+  --revealed: #f6f7f8;
+  --grid: #aeb5bc;
+  --hazard: #272b30;
+  --danger-soft: #f4d7da;
+  --flag: #d4515d;
+  --accent: #377cc0;
+  --gold: #d2a349;
+  --gold-soft: #f1dfa9;
+}
+
+.suite-shell[data-game="mine-islands"][data-skin="xp-classic"] {
+  --game-accent: #245edb;
+  --game-logo-bg: #dfe6f3;
+  --covered: #c0c0c0;
+  --covered-hover: #c0c0c0;
+  --revealed: #c0c0c0;
+  --grid: #808080;
+  --hazard: #000000;
+  --danger-soft: #ff6b6b;
+  --flag: #ff0000;
+  --accent: #245edb;
+}
+
+.suite-shell[data-game="mini-chess"] {
+  --game-accent: #9a762c;
+  --game-logo-bg: #ece9df;
+  --board-light: #d9d3c3;
+  --board-dark: #6f8f82;
+  --board-frame: #3a4744;
+  --accent: #b38932;
+  --accent-soft: #e6d8b8;
+}
+
+[data-theme="dark"] .suite-shell[data-game="queens"] {
+  --game-accent: #9d8cff;
+  --game-logo-bg: #302d3e;
+  --region-1: #70632e;
+  --region-2: #3d677c;
+  --region-3: #3e6c57;
+  --region-4: #82593c;
+  --region-5: #455d85;
+  --region-6: #754d68;
+  --region-7: #7b493c;
+  --region-8: #5d5679;
+  --region-9: #476e68;
+  --region-10: #55585d;
+}
+
+[data-theme="dark"] .suite-shell[data-game="queens"][data-skin="garden"] {
+  --game-accent: #e27c86;
+  --game-logo-bg: #3c2d31;
+  --region-1: #70612e;
+  --region-2: #416653;
+  --region-3: #526a60;
+  --region-4: #7b523f;
+  --region-5: #465e78;
+  --region-6: #704c5a;
+  --region-7: #7c4145;
+  --region-8: #5c5574;
+  --region-9: #456b65;
+  --region-10: #565a5c;
+}
+
+[data-theme="dark"] .suite-shell[data-game="tango"] {
+  --game-accent: #75a8dc;
+  --game-logo-bg: #2e3238;
+  --symbol-1: #e7b64e;
+  --symbol-1-soft: #f2d587;
+  --symbol-0: #75a8dc;
+  --symbol-0-soft: #a3c7e8;
+  --board-cell: #2d2d30;
+  --board-given: #3c3c3f;
+}
+
+[data-theme="dark"] .suite-shell[data-game="tango"][data-skin="elements"] {
+  --game-accent: #62b5cf;
+  --symbol-1: #ed875c;
+  --symbol-1-soft: #f1b17f;
+  --symbol-0: #6aaee0;
+  --symbol-0-soft: #99d4ea;
+  --teal: #5bb8ae;
+}
+
+[data-theme="dark"] .suite-shell[data-game="lights"] {
+  --game-accent: #57b8aa;
+  --game-logo-bg: #293735;
+  --cell: #2d2d30;
+  --cell-alt: #29292c;
+  --glow: #edc258;
+  --glow-soft: #f1dc9a;
+  --route: #57b8aa;
+  --light-off: #52565b;
+}
+
+[data-theme="dark"] .suite-shell[data-game="tracks"] {
+  --game-accent: #4ec9b0;
+  --game-logo-bg: #293734;
+  --cell: #2d2d30;
+  --cell-alt: #2d2d30;
+  --empty-cell: #35383b;
+  --track: #66767d;
+  --track-channel: #343d42;
+  --track-node-center: #8c9ba1;
+  --track-node-mid: #6f8087;
+  --track-node-rim: #4c5b62;
+  --track-node-asset: #7f929a;
+  --flow: #4ec9b0;
+  --flow-bright: #8be1d0;
+  --flow-glow: rgba(78, 201, 176, 0.48);
+  --start: #4ba7d1;
+  --end: #e06f62;
+}
+
+[data-theme="dark"] .suite-shell[data-game="tracks"][data-skin="liquid"] {
+  --game-accent: #45b9e6;
+  --game-logo-bg: #283840;
+  --cell: #2d2d30;
+  --cell-alt: #2d2d30;
+  --empty-cell: #333b40;
+  --track: #617985;
+  --track-channel: #263d48;
+  --track-node-asset: #54c8f2;
+  --flow: #28b8ec;
+  --flow-bright: #d4f8ff;
+  --flow-glow: rgba(40, 184, 236, 0.68);
+  --start: #4ca6d1;
+  --end: #e16b73;
+}
+
+[data-theme="dark"] .suite-shell[data-game="tracks"][data-skin="electric"] {
+  --game-accent: #e0b94d;
+  --game-logo-bg: #3b382b;
+  --cell: #2d2d30;
+  --cell-alt: #2d2d30;
+  --empty-cell: #383730;
+  --track: #74716a;
+  --track-channel: #3f3a28;
+  --track-node-asset: #ffd34d;
+  --flow: #e7b63a;
+  --flow-bright: #fff1a0;
+  --flow-glow: rgba(255, 211, 77, 0.72);
+  --start: #58a6cf;
+  --end: #e06a88;
+}
+
+[data-theme="dark"] .suite-shell[data-game="zip"] {
+  --game-accent: #5aa9d7;
+  --game-logo-bg: #29363e;
+  --cell: #2d2d30;
+  --cell-alt: #29292c;
+  --route: #5aa9d7;
+  --route-dark: #7ab9dc;
+  --route-soft: #314957;
+  --route-visited: #30414b;
+  --gold: #d8b15b;
+  --gold-soft: #594c2d;
+}
+
+[data-theme="dark"] .suite-shell[data-game="zip"][data-skin="spain"] {
+  --game-accent: #df8067;
+  --game-logo-bg: #3c302b;
+  --cell: #30302f;
+  --cell-alt: #2b2b2a;
+  --route: #df8067;
+  --route-dark: #f0a28b;
+  --route-soft: #564039;
+  --route-visited: #3f3934;
+  --gold: #dfbc6b;
+  --gold-soft: #584c31;
+}
+
+[data-theme="dark"] .suite-shell[data-game="mine-islands"] {
+  --game-accent: #6ca8e0;
+  --game-logo-bg: #293644;
+  --covered: #3a3d41;
+  --covered-hover: #44484d;
+  --revealed: #29292c;
+  --grid: #1b1b1d;
+  --hazard: #d4d4d4;
+  --danger-soft: #543035;
+  --flag: #ec7b84;
+  --accent: #6ca8e0;
+}
+
+[data-theme="dark"] .suite-shell[data-game="mine-islands"][data-skin="xp-classic"] {
+  --game-accent: #5b8def;
+  --game-logo-bg: #343b49;
+  --covered: #c0c0c0;
+  --covered-hover: #c0c0c0;
+  --revealed: #c0c0c0;
+  --grid: #808080;
+  --hazard: #000000;
+  --danger-soft: #ff6b6b;
+  --flag: #ff0000;
+  --accent: #5b8def;
+}
+
+[data-theme="dark"] .suite-shell[data-game="mini-chess"] {
+  --game-accent: #d0ad5d;
+  --game-logo-bg: #39352c;
+  --board-light: #b7b09f;
+  --board-dark: #526f64;
+  --board-frame: #171c1b;
+  --accent: #d0ad5d;
+  --accent-soft: #55482d;
+}
+
+/* Minimal board treatments consume the skin tokens above. */
+.suite-shell[data-game="mine-islands"][data-skin="xp-classic"] .canvas-board-renderer > canvas {
+  image-rendering: pixelated;
+}
+
+.suite-shell[data-game="queens"] .cell {
+  background: var(--region-color);
+}
+
+.suite-shell[data-game="queens"] .board.patterns-enabled .cell {
+  background:
+    var(--region-pattern),
+    var(--region-color);
+}
+
+[data-theme="dark"] .suite-shell[data-game="queens"] .board.patterns-enabled .cell {
+  background:
+    var(--region-pattern-dark),
+    var(--region-color);
+}
+
+.suite-shell[data-game="tango"] .cell {
+  background: var(--board-cell);
+}
+
+.suite-shell[data-game="tango"] .cell.is-given {
+  background: var(--board-given);
+}
+
+.suite-shell[data-game="lights"] .cell,
+.suite-shell[data-game="lights"] .cell:nth-child(even) {
+  background: var(--cell);
+}
+
+.suite-shell[data-game="lights"] .cell:nth-child(even) {
+  background: var(--cell-alt);
+}
+
+.suite-shell[data-game="lights"] .light-core {
+  border-color: color-mix(in srgb, var(--game-text) 16%, transparent);
+  background: var(--light-off);
+  box-shadow: inset 0 2px 5px rgba(31, 35, 40, 0.12);
+}
+
+.suite-shell[data-game="lights"] .cell.is-lit .light-core {
+  border-color: color-mix(in srgb, var(--glow) 55%, var(--game-text));
+  background: radial-gradient(circle at 35% 30%, #ffffff 0 18%, var(--glow-soft) 48%, var(--glow) 100%);
+  box-shadow:
+    0 0 0 5px color-mix(in srgb, var(--glow) 14%, transparent),
+    0 0 18px color-mix(in srgb, var(--glow) 44%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.suite-shell[data-game="lights"] .cell.is-dark .light-core {
+  background: var(--light-off);
+}
+
+.suite-shell[data-game="tracks"] .board {
+  background: var(--cell);
+}
+
+.suite-shell[data-game="tracks"] .cell.is-empty,
+.suite-shell[data-game="tracks"] .cell.is-empty:nth-child(even) {
+  background: var(--empty-cell);
+}
+
+.suite-shell[data-game="tracks"] .cell.is-start::before {
+  background: color-mix(in srgb, var(--start) 22%, var(--cell));
+}
+
+.suite-shell[data-game="tracks"] .cell.is-end::before {
+  background: color-mix(in srgb, var(--end) 20%, var(--cell));
+}
+
+.suite-shell[data-game="zip"] .cell {
+  background: var(--cell);
+}
+
+.suite-shell[data-game="zip"] .cell:nth-child(even) {
+  background: var(--cell-alt);
+}
+
+.suite-shell[data-game="zip"] .cell.is-visited {
+  background: var(--route-visited);
+}
+
+.suite-shell[data-game="zip"] .clue {
+  border-color: color-mix(in srgb, var(--game-text) 72%, transparent);
+  color: var(--game-text);
+  background: var(--game-surface);
+  box-shadow:
+    0 3px 8px rgba(31, 35, 40, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+[data-theme="dark"] .suite-shell[data-game="zip"] .clue {
+  color: var(--game-text);
+  background: var(--game-elevated);
+  box-shadow:
+    0 3px 8px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.suite-shell[data-game="mine-islands"] .cell,
+.suite-shell[data-game="mine-islands"] .cell:nth-child(even) {
+  background: var(--covered);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.25),
+    inset -1px -1px 0 color-mix(in srgb, var(--game-text) 18%, transparent);
+}
+
+[data-theme="dark"] .suite-shell[data-game="mine-islands"] .cell,
+[data-theme="dark"] .suite-shell[data-game="mine-islands"] .cell:nth-child(even) {
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.08),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.24);
+}
+
+.suite-shell[data-game="mine-islands"] .cell.is-revealed,
+.suite-shell[data-game="mine-islands"] .cell.is-hazard {
+  background: var(--revealed);
+  box-shadow: none;
+}
+
+.suite-shell[data-game="mini-chess"] .chess-board {
+  border-width: 3px;
+}
+
+.suite-shell[data-game="mini-chess"] .chess-square.is-selected {
+  box-shadow:
+    inset 0 0 0 3px var(--accent),
+    inset 0 0 0 999px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.suite-shell[data-game="mini-chess"] .chess-square.is-last-move {
+  box-shadow: inset 0 0 0 999px color-mix(in srgb, var(--accent) 24%, transparent);
+}

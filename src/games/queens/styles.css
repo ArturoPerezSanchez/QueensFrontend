@@ -373,6 +373,12 @@
   filter: drop-shadow(0 3px 2px rgba(23, 33, 43, 0.28));
 }
 
+.suite-shell[data-skin="garden"] .game-queens .queen-piece,
+.suite-shell[data-skin="garden"] .game-queens .solution-piece {
+  width: 86%;
+  height: 86%;
+}
+
 .game-queens .solution-piece {
   width: 72%;
   height: 72%;

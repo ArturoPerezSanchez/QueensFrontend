@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   AlertTriangle,
+  ChevronDown,
   CircleHelp,
   Lightbulb,
   LoaderCircle,
@@ -10,22 +11,22 @@ import {
   Trophy,
   X,
 } from "lucide-react";
+import { useGameResultReporter } from "@/features/auth/AuthProvider";
+import { LeaderboardLink } from "@/features/leaderboard/LeaderboardLink";
+import { useGameSkin } from "@/features/skins/useSkins";
+import type { CanvasBoardPointer } from "@/shared/canvas/CanvasBoard";
 import { fetchPuzzle } from "./api";
 import {
   boardSquares,
   completedSolverMoves,
   formatTime,
-  isBottomRank,
-  isDarkSquare,
   isExpectedMove,
-  isLeftFile,
   legalTargets,
   parseFen,
-  pieceAsset,
-  pieceLabel,
   sideLabel,
 } from "./game";
-import type { BoardPiece, LastMove, Puzzle, SquareId } from "./types";
+import { MiniChessCanvas, type CanvasDragPreview } from "./MiniChessCanvas";
+import type { BoardPiece, BoardSize, LastMove, Puzzle, SquareId } from "./types";
 
 const CONFETTI_COLORS = ["#c6943b", "#47796d", "#cf5b4c", "#385b73", "#efe1c4"];
 
@@ -36,26 +37,35 @@ type PointerDrag = {
   piece: BoardPiece;
   startX: number;
   startY: number;
-  offsetX: number;
-  offsetY: number;
-  size: number;
 };
 
-type DragPreview = {
-  piece: BoardPiece;
-  x: number;
-  y: number;
-  offsetX: number;
-  offsetY: number;
-  size: number;
-};
+function getStoredBestTime(puzzle: Puzzle): number | null {
+  const current = window.localStorage.getItem(`mini-chess-best-${puzzle.boardWidth}`);
+  if (current) {
+    return Number(current);
+  }
+
+  const legacyTimes = [1, 2, 3]
+    .map((mateIn) => window.localStorage.getItem(`mini-chess-best-${puzzle.variant}-${mateIn}`))
+    .filter((value): value is string => value !== null)
+    .map(Number);
+  if (legacyTimes.length === 0) {
+    return null;
+  }
+
+  const migrated = Math.min(...legacyTimes);
+  window.localStorage.setItem(`mini-chess-best-${puzzle.boardWidth}`, String(migrated));
+  return migrated;
+}
 
 export function MiniChessGame() {
+  const skin = useGameSkin("mini-chess");
+  const [selectedSize, setSelectedSize] = useState<BoardSize>(8);
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [ply, setPly] = useState(0);
   const [selectedSquare, setSelectedSquare] = useState<SquareId | null>(null);
   const [draggingSquare, setDraggingSquare] = useState<SquareId | null>(null);
-  const [dragPreview, setDragPreview] = useState<DragPreview | null>(null);
+  const [dragPreview, setDragPreview] = useState<CanvasDragPreview | null>(null);
   const [lastMove, setLastMove] = useState<LastMove | null>(null);
   const [wrongSquare, setWrongSquare] = useState<SquareId | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -73,8 +83,6 @@ export function MiniChessGame() {
   const replyTimerRef = useRef<number | null>(null);
   const wrongTimerRef = useRef<number | null>(null);
   const pointerDragRef = useRef<PointerDrag | null>(null);
-  const skipClickRef = useRef(false);
-  const boardZoneRef = useRef<HTMLDivElement | null>(null);
 
   const currentState = puzzle?.states[ply] ?? null;
   const pieces = useMemo(
@@ -98,6 +106,16 @@ export function MiniChessGame() {
   );
   const checkSquare = currentState?.checkSquare ?? null;
 
+  useGameResultReporter({
+    runKey: puzzle,
+    completed: solved,
+    game: "mini-chess",
+    difficulty: puzzle ? `${puzzle.boardWidth}x${puzzle.boardHeight}` : `${selectedSize}x${selectedSize}`,
+    won: true,
+    time_seconds: elapsedSeconds,
+    assisted,
+  });
+
   const stopPendingActions = useCallback(() => {
     replySequenceRef.current += 1;
     window.clearTimeout(replyTimerRef.current ?? undefined);
@@ -109,6 +127,7 @@ export function MiniChessGame() {
   const initializePuzzle = useCallback(
     (nextPuzzle: Puzzle) => {
       stopPendingActions();
+      setSelectedSize(nextPuzzle.boardWidth as BoardSize);
       setPuzzle(nextPuzzle);
       setPly(0);
       setSelectedSquare(null);
@@ -121,16 +140,13 @@ export function MiniChessGame() {
       setFeedback(null);
       setUsedHint(false);
       setMadeMistake(false);
-      const stored = window.localStorage.getItem(
-        `mini-chess-best-${nextPuzzle.variant}-${nextPuzzle.mateIn}`,
-      );
-      setBestTime(stored ? Number(stored) : null);
+      setBestTime(getStoredBestTime(nextPuzzle));
     },
     [stopPendingActions],
   );
 
   const loadPuzzle = useCallback(
-    async (signal?: AbortSignal) => {
+    async (size: BoardSize, signal?: AbortSignal) => {
       const requestSequence = ++requestSequenceRef.current;
       stopPendingActions();
       setIsLoading(true);
@@ -138,7 +154,7 @@ export function MiniChessGame() {
       setPuzzle(null);
 
       try {
-        const nextPuzzle = await fetchPuzzle(signal);
+        const nextPuzzle = await fetchPuzzle(size, signal);
         if (requestSequence === requestSequenceRef.current) {
           initializePuzzle(nextPuzzle);
         }
@@ -158,7 +174,7 @@ export function MiniChessGame() {
   useEffect(() => {
     const controller = new AbortController();
     const timeout = window.setTimeout(() => {
-      void loadPuzzle(controller.signal);
+      void loadPuzzle(8, controller.signal);
     }, 0);
     return () => {
       window.clearTimeout(timeout);
@@ -182,7 +198,7 @@ export function MiniChessGame() {
       return;
     }
     window.localStorage.setItem(
-      `mini-chess-best-${puzzle.variant}-${puzzle.mateIn}`,
+      `mini-chess-best-${puzzle.boardWidth}`,
       String(elapsedSeconds),
     );
   }, [elapsedSeconds, isNewBest, puzzle]);
@@ -285,7 +301,8 @@ export function MiniChessGame() {
     showWrongMove(square, "That piece cannot move there.", false);
   };
 
-  const beginPointerDrag = (event: PointerEvent<HTMLButtonElement>, square: SquareId) => {
+  const beginPointerDrag = ({ event, row, col }: CanvasBoardPointer) => {
+    const square = squares[row * (puzzle?.boardWidth ?? selectedSize) + col];
     if (event.button !== 0 || !currentState || !puzzle || solved || isResponding || ply % 2 !== 0) {
       return;
     }
@@ -296,8 +313,6 @@ export function MiniChessGame() {
       return;
     }
 
-    event.currentTarget.setPointerCapture(event.pointerId);
-    const squareBounds = event.currentTarget.getBoundingClientRect();
     pointerDragRef.current = {
       active: false,
       pointerId: event.pointerId,
@@ -305,13 +320,10 @@ export function MiniChessGame() {
       piece,
       startX: event.clientX,
       startY: event.clientY,
-      offsetX: event.clientX - squareBounds.left,
-      offsetY: event.clientY - squareBounds.top,
-      size: squareBounds.width,
     };
   };
 
-  const movePointerDrag = (event: PointerEvent<HTMLButtonElement>) => {
+  const movePointerDrag = ({ event, x, y }: CanvasBoardPointer) => {
     const drag = pointerDragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) {
       return;
@@ -319,42 +331,39 @@ export function MiniChessGame() {
 
     if (!drag.active && Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) >= 7) {
       drag.active = true;
-      skipClickRef.current = true;
       setSelectedSquare(drag.square);
       setDraggingSquare(drag.square);
       setFeedback(null);
     }
 
     if (drag.active) {
-      const boardZoneBounds = boardZoneRef.current?.getBoundingClientRect();
       setDragPreview({
         piece: drag.piece,
-        x: boardZoneBounds ? event.clientX - boardZoneBounds.left : event.clientX,
-        y: boardZoneBounds ? event.clientY - boardZoneBounds.top : event.clientY,
-        offsetX: drag.offsetX,
-        offsetY: drag.offsetY,
-        size: drag.size,
+        x,
+        y,
       });
     }
   };
 
-  const endPointerDrag = (event: PointerEvent<HTMLButtonElement>) => {
+  const endPointerDrag = ({ event, row, col }: CanvasBoardPointer) => {
     const drag = pointerDragRef.current;
     pointerDragRef.current = null;
-    if (!drag || drag.pointerId !== event.pointerId || !drag.active) {
+    if (!drag || drag.pointerId !== event.pointerId) {
       setDragPreview(null);
       return;
     }
 
-    window.setTimeout(() => {
-      skipClickRef.current = false;
-    }, 0);
-    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLButtonElement>("[data-square]");
-    const square = target?.dataset.square;
+    if (!drag.active) {
+      selectOrMove(drag.square);
+      setDragPreview(null);
+      return;
+    }
+
+    const square = squares[row * (puzzle?.boardWidth ?? selectedSize) + col];
     setDraggingSquare(null);
     setDragPreview(null);
 
-    if (!currentState || !square || !legalTargets(currentState, drag.square).has(square)) {
+    if (!currentState || !legalTargets(currentState, drag.square).has(square)) {
       setSelectedSquare(null);
       showWrongMove(square ?? drag.square, "That piece cannot move there.", false);
       return;
@@ -392,6 +401,11 @@ export function MiniChessGame() {
     playSolverMove(expected.from, expected.to, true);
   };
 
+  const changeSize = (size: BoardSize) => {
+    setSelectedSize(size);
+    void loadPuzzle(size);
+  };
+
   const statusMessage = solved
     ? "Checkmate"
     : feedback
@@ -406,12 +420,27 @@ export function MiniChessGame() {
         <header className="top-bar">
           <div className="brand-lockup">
             <span className="brand-mark chess-brand-mark" aria-hidden="true">
-              <img src="/games/mini-chess/pieces/bn.svg" alt="" />
+              <img
+                src={`${skin.assets.pieceSetRoot}/bn.${skin.assets.pieceExtension}`}
+                alt=""
+              />
             </span>
             <h1>MiniChess</h1>
           </div>
 
           <div className="top-actions">
+            <label className="size-control">
+              <span className="sr-only">Board size</span>
+              <select
+                value={selectedSize}
+                onChange={(event) => changeSize(Number(event.target.value) as BoardSize)}
+                disabled={isLoading}
+              >
+                <option value={5}>5 x 5</option>
+                <option value={8}>8 x 8</option>
+              </select>
+              <ChevronDown aria-hidden="true" size={16} />
+            </label>
             <button
               className="icon-action"
               type="button"
@@ -425,7 +454,7 @@ export function MiniChessGame() {
           </div>
         </header>
 
-        <div className="stats-bar" aria-label="Game progress">
+        <div className="stats-bar sr-only" aria-label="Game progress">
           <div className="stat">
             <span>Timer</span>
             <strong>{formatTime(elapsedSeconds)}</strong>
@@ -442,7 +471,7 @@ export function MiniChessGame() {
           </div>
         </div>
 
-        <div className="board-zone" ref={boardZoneRef}>
+        <div className="board-zone">
           {isLoading ? (
             <div className="state-panel" role="status">
               <LoaderCircle className="spin" aria-hidden="true" size={30} />
@@ -453,7 +482,7 @@ export function MiniChessGame() {
               <AlertTriangle aria-hidden="true" size={30} />
               <strong>Could not load the puzzle</strong>
               <p>{error}</p>
-              <button className="primary-action" type="button" onClick={() => void loadPuzzle()}>
+              <button className="primary-action" type="button" onClick={() => void loadPuzzle(selectedSize)}>
                 <RefreshCcw aria-hidden="true" size={18} />
                 Try again
               </button>
@@ -466,84 +495,39 @@ export function MiniChessGame() {
                 <span>Mate in {puzzle.mateIn}</span>
               </div>
 
-              <div
-                className={`chess-board ${isResponding ? "is-responding" : ""}`}
-                aria-label={`${puzzle.boardWidth} by ${puzzle.boardHeight} MiniChess board, ${sideLabel(puzzle.sideToMove)} to move and mate in ${puzzle.mateIn}`}
-                style={
-                  {
-                    "--board-columns": puzzle.boardWidth,
-                  } as CSSProperties
-                }
-              >
-                {squares.map((square) => {
-                  const piece = pieces.get(square);
-                  const selected = square === selectedSquare;
-                  const target = targets.has(square);
-                  const last = lastMove?.from === square || lastMove?.to === square;
-                  const inCheck = checkSquare === square;
-                  const wrong = wrongSquare === square;
-                  const label = piece ? `${pieceLabel(piece)} on ${square}` : `Empty ${square}`;
-
-                  return (
-                    <button
-                      className={[
-                        "chess-square",
-                        isDarkSquare(square) ? "is-dark" : "is-light",
-                        selected ? "is-selected" : "",
-                        target ? "is-target" : "",
-                        target && piece ? "is-capture-target" : "",
-                        last ? "is-last-move" : "",
-                        inCheck ? "is-check" : "",
-                        wrong ? "is-wrong" : "",
-                        draggingSquare === square ? "is-dragging" : "",
-                      ]
-                        .filter(Boolean)
-                        .join(" ")}
-                      type="button"
-                      key={square}
-                      onClick={() => {
-                        if (skipClickRef.current) {
-                          skipClickRef.current = false;
-                          return;
-                        }
-                        selectOrMove(square);
-                      }}
-                      onPointerDown={(event) => beginPointerDrag(event, square)}
-                      onPointerMove={movePointerDrag}
-                      onPointerUp={endPointerDrag}
-                      onPointerCancel={cancelPointerDrag}
-                      disabled={solved || isResponding}
-                      aria-label={label}
-                      aria-pressed={selected}
-                      data-square={square}
-                    >
-                      {piece && <img className="chess-piece" src={pieceAsset(piece)} alt="" draggable={false} />}
-                      {isLeftFile(square, orientation, puzzle.boardWidth) && (
-                        <span className="rank-label">{square.slice(1)}</span>
-                      )}
-                      {isBottomRank(square, orientation, puzzle.boardHeight) && (
-                        <span className="file-label">{square[0]}</span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {dragPreview && (
-                <div
-                  className="chess-drag-preview"
-                  aria-hidden="true"
-                  style={
+              <MiniChessCanvas
+                width={puzzle.boardWidth}
+                height={puzzle.boardHeight}
+                orientation={orientation}
+                squares={squares}
+                pieces={pieces}
+                pieceSetRoot={skin.assets.pieceSetRoot}
+                pieceExtension={skin.assets.pieceExtension}
+                selectedSquare={selectedSquare}
+                targets={targets}
+                lastMove={lastMove}
+                checkSquare={checkSquare}
+                wrongSquare={wrongSquare}
+                draggingSquare={draggingSquare}
+                dragPreview={dragPreview}
+                disabled={solved || isResponding}
+                hud={{
+                  metrics: [
+                    { label: "Timer", value: formatTime(elapsedSeconds) },
                     {
-                      "--drag-size": `${dragPreview.size}px`,
-                      "--drag-x": `${dragPreview.x - dragPreview.offsetX}px`,
-                      "--drag-y": `${dragPreview.y - dragPreview.offsetY}px`,
-                    } as CSSProperties
-                  }
-                >
-                  <img src={pieceAsset(dragPreview.piece)} alt="" draggable={false} />
-                </div>
-              )}
+                      label: "Best",
+                      value: displayedBestTime === null ? "--:--" : formatTime(displayedBestTime),
+                    },
+                    { label: "Line", value: `${completedMoves}/${puzzle.mateIn}` },
+                  ],
+                }}
+                ariaLabel={`${puzzle.boardWidth} by ${puzzle.boardHeight} MiniChess board, ${sideLabel(puzzle.sideToMove)} to move and mate in ${puzzle.mateIn}`}
+                onActivate={({ row, col }) => selectOrMove(squares[row * puzzle.boardWidth + col])}
+                onPointerDown={beginPointerDrag}
+                onPointerMove={movePointerDrag}
+                onPointerUp={endPointerDrag}
+                onPointerCancel={cancelPointerDrag}
+              />
 
               {solved && (
                 <div className="board-popup win-popup" role="dialog" aria-modal="true" aria-label="Puzzle solved">
@@ -576,7 +560,8 @@ export function MiniChessGame() {
                       New best
                     </span>
                   )}
-                  <button className="win-action" type="button" onClick={() => void loadPuzzle()}>
+                  <LeaderboardLink game="mini-chess" difficulty={`${selectedSize}x${selectedSize}`} />
+                  <button className="win-action" type="button" onClick={() => void loadPuzzle(selectedSize)}>
                     <RefreshCcw aria-hidden="true" size={18} />
                     Next puzzle
                   </button>
@@ -604,7 +589,7 @@ export function MiniChessGame() {
             <Lightbulb aria-hidden="true" size={18} />
             Hint
           </button>
-          <button className="primary-action" type="button" onClick={() => void loadPuzzle()} disabled={isLoading}>
+          <button className="primary-action" type="button" onClick={() => void loadPuzzle(selectedSize)} disabled={isLoading}>
             <RefreshCcw aria-hidden="true" size={18} />
             New puzzle
           </button>
@@ -631,7 +616,11 @@ export function MiniChessGame() {
 
             <div className="piece-lineup" aria-hidden="true">
               {["wk", "wq", "wr", "wb", "wn", "wp"].map((piece) => (
-                <img key={piece} src={`/games/mini-chess/pieces/${piece}.svg`} alt="" />
+                <img
+                  key={piece}
+                  src={`${skin.assets.pieceSetRoot}/${piece}.${skin.assets.pieceExtension}`}
+                  alt=""
+                />
               ))}
             </div>
 

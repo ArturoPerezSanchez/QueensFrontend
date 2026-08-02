@@ -1,3 +1,4 @@
+import { apiPath } from "@/shared/api";
 import { isConnectedSolution, isValidMask, trackCount } from "./game";
 import type { Board, Position, Puzzle, TracksResponse } from "./types";
 
@@ -32,7 +33,7 @@ export async function fetchPuzzle(size: number, signal?: AbortSignal): Promise<P
     board_size: String(size),
     solution: "true",
   });
-  const response = await fetch(`/api/tracks?${params}`, { signal });
+  const response = await fetch(`${apiPath("/tracks")}?${params}`, { signal });
 
   if (!response.ok) {
     throw new Error(`Puzzle generation failed with status ${response.status}.`);

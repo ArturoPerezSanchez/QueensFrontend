@@ -1,3 +1,4 @@
+import { apiPath } from "@/shared/api";
 import { mineCount, validateClues } from "./game";
 import type { Board, MineIslandsResponse, Puzzle } from "./types";
 
@@ -21,7 +22,7 @@ export async function fetchPuzzle(size: number, signal?: AbortSignal): Promise<P
     board_size: String(size),
     solution: "true",
   });
-  const response = await fetch(`/api/mine-islands?${params}`, { signal });
+  const response = await fetch(`${apiPath("/mine-islands")}?${params}`, { signal });
 
   if (!response.ok) {
     throw new Error(`Puzzle generation failed with status ${response.status}.`);

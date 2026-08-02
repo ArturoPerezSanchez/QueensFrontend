@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   AlertTriangle,
   Asterisk,
@@ -17,10 +17,13 @@ import {
   Trophy,
   X,
 } from "lucide-react";
+import { useGameResultReporter } from "@/features/auth/AuthProvider";
+import { LeaderboardLink } from "@/features/leaderboard/LeaderboardLink";
+import { useGameSkin } from "@/features/skins/useSkins";
+import type { CanvasBoardPointer, CanvasCellPosition } from "@/shared/canvas/CanvasBoard";
 import { fetchPuzzle } from "./api";
 import {
   BOARD_SIZES,
-  MINE,
   createHiddenBoard,
   flagCount,
   formatTime,
@@ -33,19 +36,13 @@ import {
   safeCount,
   toggleFlag,
 } from "./game";
+import { MineIslandsCanvas } from "./MineIslandsCanvas";
 import type { Position, Puzzle, VisibilityBoard } from "./types";
 
 const CONFETTI_COLORS = ["#2e6fce", "#e6b65c", "#2f8a63", "#e05d5d", "#242b34"];
 
-function samePosition(first: Position | null, row: number, col: number): boolean {
-  return Boolean(first && first[0] === row && first[1] === col);
-}
-
-function clueClass(value: number): string {
-  return value > 0 ? `clue-${value}` : "";
-}
-
 export function MineIslandsGame() {
+  const skin = useGameSkin("mine-islands");
   const [selectedSize, setSelectedSize] = useState(8);
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [visibility, setVisibility] = useState<VisibilityBoard>([]);
@@ -60,7 +57,9 @@ export function MineIslandsGame() {
   const [madeMistake, setMadeMistake] = useState(false);
   const [lost, setLost] = useState(false);
   const [pressedMine, setPressedMine] = useState<Position | null>(null);
+  const [isBoardPressed, setIsBoardPressed] = useState(false);
   const [flagMode, setFlagMode] = useState(false);
+  const [attemptKey, setAttemptKey] = useState<object>(() => ({}));
 
   const requestSequenceRef = useRef(0);
   const longPressTimerRef = useRef<number | null>(null);
@@ -79,6 +78,16 @@ export function MineIslandsGame() {
     [puzzle, showSolution, visibility],
   );
 
+  useGameResultReporter({
+    runKey: attemptKey,
+    completed: solved || lost,
+    game: "mine-islands",
+    difficulty: `${selectedSize}x${selectedSize}`,
+    won: solved,
+    time_seconds: elapsedSeconds,
+    assisted,
+  });
+
   const initializePuzzle = useCallback((nextPuzzle: Puzzle, size: number) => {
     setSelectedSize(size);
     setPuzzle(nextPuzzle);
@@ -90,7 +99,9 @@ export function MineIslandsGame() {
     setMadeMistake(false);
     setLost(false);
     setPressedMine(null);
+    setIsBoardPressed(false);
     setFlagMode(false);
+    setAttemptKey({});
     const stored = window.localStorage.getItem(`mine-islands-best-${size}`);
     setBestTime(stored ? Number(stored) : null);
   }, []);
@@ -184,7 +195,11 @@ export function MineIslandsGame() {
     }
   };
 
-  const beginPress = (event: PointerEvent<HTMLButtonElement>, row: number, col: number) => {
+  const beginPress = ({ event, row, col }: CanvasBoardPointer) => {
+    if (!puzzle || showSolution || solved || lost) {
+      return;
+    }
+    setIsBoardPressed(true);
     if (event.pointerType === "mouse") {
       return;
     }
@@ -197,6 +212,7 @@ export function MineIslandsGame() {
   };
 
   const endPress = () => {
+    setIsBoardPressed(false);
     window.clearTimeout(longPressTimerRef.current ?? undefined);
     longPressTimerRef.current = null;
   };
@@ -209,6 +225,8 @@ export function MineIslandsGame() {
     setShowSolution(false);
     setLost(false);
     setPressedMine(null);
+    setIsBoardPressed(false);
+    setAttemptKey({});
   };
 
   const revealHint = () => {
@@ -281,7 +299,7 @@ export function MineIslandsGame() {
           </div>
         </header>
 
-        <div className="stats-bar" aria-label="Game progress">
+        <div className="stats-bar sr-only" aria-label="Game progress">
           <div className="stat">
             <span>{solutionRevealed || lost ? "Timer paused" : "Timer"}</span>
             <strong>{formatTime(elapsedSeconds)}</strong>
@@ -316,70 +334,56 @@ export function MineIslandsGame() {
             </div>
           ) : (
             <>
-              <div
-                className={`board ${showSolution ? "is-showing-solution" : ""} ${lost ? "has-hit-mine" : ""}`}
-                style={{ "--board-size": puzzle.size } as CSSProperties}
-                aria-label={`${puzzle.size} by ${puzzle.size} Mine Islands board`}
-              >
-                {puzzle.solution.map((rowValues, row) =>
-                  rowValues.map((value, col) => {
-                    const key = positionKey([row, col]);
-                    const status = displayedVisibility[row][col];
-                    const revealMine = lost && value === MINE;
-                    const revealed = status === "revealed" || revealMine;
-                    const flagged = status === "flagged" && !showSolution;
-                    const exploded = samePosition(pressedMine, row, col);
-                    const label = revealed
-                      ? value === MINE
-                        ? "hazard"
-                        : value === 0
-                          ? "clear"
-                          : `${value} touching hazards`
-                      : flagged
-                        ? "flagged"
-                        : "hidden";
-
-                    return (
-                      <button
-                        className={[
-                          "cell",
-                          revealed ? "is-revealed" : "is-hidden",
-                          flagged ? "is-flagged" : "",
-                          value === 0 && revealed ? "is-clear" : "",
-                          value > 0 && revealed ? `has-clue ${clueClass(value)}` : "",
-                          value === MINE && revealed ? "is-hazard" : "",
-                          exploded ? "is-exploded" : "",
-                        ]
-                          .filter(Boolean)
-                          .join(" ")}
-                        type="button"
-                        key={key}
-                        disabled={showSolution || solved || lost}
-                        onClick={() => {
-                          if (skipClickRef.current.has(key)) {
-                            skipClickRef.current.delete(key);
-                            return;
-                          }
-                          activateCell(row, col);
-                        }}
-                        onContextMenu={(event) => {
-                          event.preventDefault();
-                          toggleFlagAt(row, col);
-                        }}
-                        onPointerCancel={endPress}
-                        onPointerDown={(event) => beginPress(event, row, col)}
-                        onPointerLeave={endPress}
-                        onPointerUp={endPress}
-                        aria-label={`Row ${row + 1}, column ${col + 1}: ${label}`}
-                      >
-                        {flagged && <Flag className="flag-icon" aria-hidden="true" size={21} />}
-                        {revealed && value === MINE && <Asterisk className="hazard-icon" aria-hidden="true" size={27} />}
-                        {revealed && value > 0 && <span className="clue">{value}</span>}
-                      </button>
-                    );
-                  }),
-                )}
-              </div>
+              <MineIslandsCanvas
+                puzzle={puzzle}
+                visibility={displayedVisibility}
+                assets={skin.assets}
+                lost={lost}
+                pressedMine={pressedMine}
+                disabled={showSolution || solved || lost}
+                hud={{
+                  variant: skin.assets.hud?.variant ?? "suite",
+                  iconAsset: skin.assets.hud
+                    ? solved
+                      ? skin.assets.hud.faces.won
+                      : lost
+                        ? skin.assets.hud.faces.lost
+                        : isBoardPressed
+                          ? skin.assets.hud.faces.pressed
+                        : skin.assets.hud.faces.neutral
+                    : undefined,
+                  digitAssets: skin.assets.hud?.digits,
+                  minusAsset: skin.assets.hud?.minus,
+                  action: skin.assets.hud
+                    ? {
+                        label: "Reset the Mine Islands board",
+                        onActivate: retry,
+                      }
+                    : undefined,
+                  metrics: [
+                    {
+                      label: solutionRevealed || lost ? "Timer paused" : "Timer",
+                      value: formatTime(elapsedSeconds),
+                    },
+                    {
+                      label: "Best",
+                      value: displayedBestTime === null ? "--:--" : formatTime(displayedBestTime),
+                    },
+                    { label: "Marked", value: `${flags}/${puzzle.mineCount}` },
+                  ],
+                }}
+                onActivate={({ row, col }: CanvasCellPosition) => {
+                  const key = positionKey([row, col]);
+                  if (skipClickRef.current.has(key)) {
+                    skipClickRef.current.delete(key);
+                    return;
+                  }
+                  activateCell(row, col);
+                }}
+                onContextMenu={({ row, col }) => toggleFlagAt(row, col)}
+                onPointerDown={beginPress}
+                onPointerUp={endPress}
+              />
 
               {lost && (
                 <div className="board-popup mistake-popup" role="dialog" aria-modal="true" aria-label="Hazard revealed">
@@ -426,6 +430,7 @@ export function MineIslandsGame() {
                       New best
                     </span>
                   )}
+                  <LeaderboardLink game="mine-islands" difficulty={`${selectedSize}x${selectedSize}`} />
                   <button className="win-action" type="button" onClick={() => void loadPuzzle(selectedSize)}>
                     <RefreshCcw aria-hidden="true" size={18} />
                     Play again

@@ -1,0 +1,136 @@
+.suite-shell[data-game] :is(.board, .chess-board).canvas-board {
+  position: relative;
+  display: block;
+  aspect-ratio: var(--canvas-board-aspect, 1);
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  isolation: isolate;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.suite-shell[data-game="zip"] .canvas-board,
+.suite-shell[data-game="mini-chess"] .canvas-board {
+  touch-action: none;
+}
+
+.canvas-board-renderer {
+  position: absolute;
+  inset: 0;
+}
+
+.canvas-board-renderer > canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+
+.canvas-board.is-ready .canvas-board-renderer > canvas {
+  opacity: 1;
+}
+
+.canvas-board-animation {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.canvas-board.is-ready .canvas-board-animation {
+  opacity: 1;
+}
+
+.canvas-board.is-loading {
+  background: var(--board-cell, var(--game-elevated, #f3f3f3));
+}
+
+.canvas-board.is-loading::after {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  width: 26px;
+  height: 26px;
+  border: 3px solid color-mix(in srgb, var(--game-grid, var(--game-border)) 42%, transparent);
+  border-top-color: var(--game-accent);
+  border-radius: 50%;
+  content: "";
+  transform: translate(-50%, -50%);
+  animation: canvas-board-spin 700ms linear infinite;
+}
+
+.canvas-board-accessibility {
+  position: absolute;
+  z-index: 2;
+  top: var(--canvas-board-hud-ratio, 0%);
+  right: 0;
+  left: 0;
+  height: var(--canvas-board-grid-ratio, 100%);
+  display: grid;
+  pointer-events: none;
+}
+
+.canvas-board-hud-action {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  aspect-ratio: 1;
+  opacity: 0;
+  background: transparent;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+}
+
+.canvas-board-hud-action:focus-visible {
+  opacity: 1;
+  outline: 3px solid var(--game-focus);
+  outline-offset: 3px;
+  background: color-mix(in srgb, var(--game-focus) 12%, transparent);
+}
+
+.canvas-board-accessibility > button {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.canvas-board-accessibility > button:focus-visible {
+  z-index: 3;
+  opacity: 1;
+  outline: 3px solid var(--game-focus);
+  outline-offset: -4px;
+  background: color-mix(in srgb, var(--game-focus) 10%, transparent);
+}
+
+@keyframes canvas-board-spin {
+  to {
+    transform: translate(-50%, -50%) rotate(1turn);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas-board-renderer > canvas {
+    transition: none;
+  }
+
+  .canvas-board.is-loading::after {
+    animation: none;
+  }
+}

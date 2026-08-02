@@ -278,7 +278,7 @@
   color: var(--ink);
   background: var(--covered);
   box-shadow:
-    inset 2px 2px 0 rgba(255, 255, 255, 0.68),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.25),
     inset -2px -2px 0 rgba(36, 43, 52, 0.22);
   cursor: pointer;
   transition:
@@ -620,7 +620,7 @@
 .game-mine-islands .legend-cell.hidden {
   background: var(--covered);
   box-shadow:
-    inset 2px 2px 0 rgba(255, 255, 255, 0.68),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.25),
     inset -2px -2px 0 rgba(36, 43, 52, 0.22);
 }
 
@@ -638,7 +638,7 @@
   color: var(--flag);
   background: var(--covered);
   box-shadow:
-    inset 2px 2px 0 rgba(255, 255, 255, 0.68),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.25),
     inset -2px -2px 0 rgba(36, 43, 52, 0.22);
 }
 
