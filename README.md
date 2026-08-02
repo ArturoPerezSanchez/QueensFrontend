@@ -1,97 +1,49 @@
 # MindLab Frontend
 
-A single Vite/React frontend for MindLab's logic puzzle suite: Queens, Tango, Lights, Tracks, Zip, Mine Islands, and MiniChess.
+React, TypeScript, Vite, and PixiJS client for the MindLab logic-game suite.
+The API is maintained independently in
+[MindLab-Backend](https://github.com/ArturoPerezSanchez/MindLab-Backend).
 
-Queens keeps its existing logo and deployment shape, while the other games live as isolated modules under `src/games/*`.
+## Local development
 
-## Routes
-
-The app uses hash routes so the static Vite deployment does not need extra SPA fallback rewrites:
-
-```text
-#/queens
-#/tango
-#/lights
-#/tracks
-#/zip
-#/mine-islands
-#/mini-chess
-```
-
-## API Integration
-
-The frontend calls same-origin API paths:
-
-```text
-/api/queens
-/api/tango
-/api/lights
-/api/tracks
-/api/zip
-/api/mine-islands
-/api/mini-chess
-```
-
-In local development, Vite proxies those paths to `VITE_GAMES_API_ORIGIN`.
-If the variable is not set, it defaults to `https://api.arturops.com`.
-
-For local testing against the consolidated API:
-
-```bash
-VITE_GAMES_API_ORIGIN=http://127.0.0.1:8010 npm run dev
-```
-
-On Windows PowerShell:
+Requirements: Node.js 20 or newer.
 
 ```powershell
-$env:VITE_GAMES_API_ORIGIN="http://127.0.0.1:8010"; npm run dev
-```
-
-`vercel.json` rewrites each `/api/<game>` path to the deployed API domain.
-
-## Local Development
-
-Install dependencies:
-
-```bash
-npm install
-```
-
-Start the dev server:
-
-```bash
+npm ci
+Copy-Item .env.example .env.local
 npm run dev
 ```
 
-Build for production:
+The application is available at <http://127.0.0.1:5173>. Set
+`VITE_GAMES_API_ORIGIN=http://127.0.0.1:8010` in `.env.local` when the API is
+running locally. Vite proxies the versioned `/api/v1` contract to that origin.
 
-```bash
+## Validation
+
+```powershell
+npm run lint
 npm run build
 ```
 
-## Project Structure
+The same commands run in GitHub Actions for every push and pull request.
+
+## Structure
 
 ```text
-src/
-  App.tsx             Suite router and shared game navigation
-  main.tsx            React entry point
-  styles.css          Global suite shell styles
-  useTheme.ts         Shared light/dark theme hook
-  games/
-    queens/
-    tango/
-    lights/
-    tracks/
-    zip/
-    mine-islands/
-    mini-chess/
+src/app/       Application shell and routing
+src/features/  Account, auth, leaderboard, profile, settings, and skins
+src/games/     Self-contained game modules
+src/shared/    API paths, Canvas primitives, metadata, and reusable icons
+src/styles/    Global design system, game frame, and skin tokens
+public/brand/  Product assets
+public/games/  Assets grouped by game and skin
+docs/          Frontend architecture and contribution guides
 ```
 
-Each game module owns its component, fetch client, pure game helpers, types, and scoped stylesheet.
+Use `@/` imports across module boundaries and relative imports inside a game or
+feature. Every playable board uses the shared Canvas host while navigation,
+forms, profiles, and leaderboards remain semantic DOM interfaces.
 
-MiniChess mixes mate-in-1, mate-in-2, and mate-in-3 positions across standard
-8x8 and Gardner 5x5 boards. It supports both click-to-move and desktop
-drag-and-drop controls. The API supplies validated per-ply positions and legal
-destinations so both board geometries use the same interaction model. Piece-art
-and puzzle-source details are documented in
-`public/games/mini-chess/ATTRIBUTION.md`.
+See [Architecture](docs/architecture.md),
+[Development](docs/development.md), [Skins](docs/skins.md), and
+[Third-party assets](docs/assets.md).
